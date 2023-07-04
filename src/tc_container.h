@@ -74,6 +74,8 @@ private:
     thread_state_type state_{THREAD_STATE_IDLE};
     pthread_mutex_t state_mutex_;
     bool purge_flag_{false};
+
+    Config conf_;
     bool is_init_{false};
 };
 

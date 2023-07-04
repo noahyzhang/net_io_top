@@ -50,6 +50,9 @@ public:
     time_t get_last_pkt_timestamp() { return last_pkt_ts_; }
     time_t get_idle_seconds() { return time(NULL) - get_last_pkt_timestamp(); }
 
+    uint32_t get_payload_bytes_per_second() { return payload_bytes_last_second_; }
+    int get_all_bytes_per_second() { return all_bytes_last_second_; }
+
     bool is_finished() {
         if (state_ == TCP_STATE_CLOSED || state_ == TCP_STATE_RESET) {
             return true;
@@ -57,18 +60,13 @@ public:
         return false;
     }
 
+public:
     bool match(const IPAddress& sa, const IPAddress& da, uint16_t sp, uint16_t dp) const;
     bool accept_packet(const TcpCapture& cap);
-
     void re_calc_avg();
 
-    bool is_activity_toggle();
-
-    int get_packets_per_second() {
-
-    }
-    uint32_t get_payload_bytes_per_second();
-    int get_all_bytes_per_second();
+private:
+    void update_counter_for_packet(const TcpCapture& p);
 
 private:
     uint64_t fin_ack_from_dst_;

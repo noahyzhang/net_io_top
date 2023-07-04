@@ -57,12 +57,21 @@ void PacketBuffer::maint_thread_run() {
         for (; !out_queue_->empty();) {
             nlp = nullptr;
             nlp = out_queue_->front();
-            pthread_mutex_lock(&)
+            pthread_mutex_lock(&container_lock_);
+            if (container_ != nullptr) {
+                TcpPacket* tcp_packet = TcpPacket::new_tcp_packet(nlp->p, nlp->len);
+                TcpCapture cap(tcp_packet, nlp->ts);
+                container_->process_packet(cap);
+            }
+            pthread_mutex_unlock(&container_lock_);
+            free(nlp->p);
+            free(nlp);
+            out_queue_->pop();
         }
     }
 }
 
-void* pb_maint_thread_func(void* arg) {
+void* PacketBuffer::pb_maint_thread_func(void* arg) {
     PacketBuffer* pb_obj = reinterpret_cast<PacketBuffer*>(arg);
     pb_obj->maint_thread_run();
     return nullptr;

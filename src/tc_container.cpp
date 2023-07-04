@@ -1,6 +1,7 @@
 #include <string.h>
 #include <error.h>
 #include <utility>
+#include "config.h"
 #include "common.h"
 #include "log.h"
 #include "tc_container.h"
@@ -87,7 +88,7 @@ void TCContainer::maint_thread_run() {
             ic->re_calc_avg();
             // 删除已经关闭的、或过期的连接
             if (purge_flag_ == true) {
-                if ((ic->is_finished() && ic->get_idle_seconds() > app->remto)
+                if ((ic->is_finished() && ic->get_idle_seconds() > conf_.get_conn_closed_timeout_s())
                     || (ic->get_state() == TCP_STATE_SYN_SYNACK && ic->get_idle_seconds() > SYN_SYNACK_WAIT)
                     || (ic->get_state() == TCP_STATE_FIN_FINACK && ic->get_idle_seconds() > FIN_FINACK_WAIT)) {
                     TcpConnection* rm = ic;

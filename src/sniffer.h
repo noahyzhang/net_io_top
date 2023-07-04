@@ -14,6 +14,7 @@
 
 
 #include <string>
+#include "packet_buffer.h"
 #include "pcap/pcap.h"
 
 namespace net_io_top {
@@ -33,7 +34,7 @@ private:
     pthread_t sniffer_tid_{0};
     pcap_t* pcap_handler_{nullptr};
 
-    PackageBuffer* pb_{nullptr};
+    PacketBuffer* pb_{nullptr};
     pthread_mutex_t pb_mutex_;
 
     bool pcap_initted_{false};

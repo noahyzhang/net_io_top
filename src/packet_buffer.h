@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <queue>
 #include "utils.h"
+#include "tc_container.h"
 
 namespace net_io_top {
 
@@ -28,6 +29,9 @@ public:
     void push_packet(struct nlp*);
     void maint_thread_run();
 
+public:
+    static void* pb_maint_thread_func(void*);
+
 private:
     pthread_t maint_thread_tid_{0};
     bool pthread_initted_{false};
@@ -39,10 +43,9 @@ private:
     std::queue<struct nlp*>* in_queue_{nullptr};
     std::queue<struct nlp*>* out_queue_{nullptr};
 
-
+    TCContainer* container_;
+    pthread_mutex_t container_lock_;
 };
-
-void* pb_maint_thread_func(void*);
 
 }  // namespace net_io_top
 

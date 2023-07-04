@@ -27,9 +27,9 @@ const uint8_t URG = 0x20;  // 紧急（紧急指针字段有效，很少被使�
 const uint8_t ECE = 0x40;  // ECN 回显（发送方接收到了一个更早的拥塞通告）
 const uint8_t CWR = 0x80;  // 拥塞窗口减少（发送方降低它的发送速率）
 
-class TCPHeader {
+class TcpHeader {
 public:
-    TCPHeader(const u_char* data, uint32_t data_len) {
+    TcpHeader(const u_char* data, uint32_t data_len) {
         struct sniff_tcp* tcp = (struct sniff_tcp*)data;
         // tcp header 至少 20 字节
         // 构造函数中暂不做判断，假定此 tcp 报文没有问题
@@ -41,7 +41,7 @@ public:
         flags_ = tcp->th_flags;
         header_len_ = tcp->th_off * 4;
     }
-    TCPHeader(const TCPHeader& other) {
+    TcpHeader(const TcpHeader& other) {
         seq_num_ = other.seq_num_;
         ack_num_ = other.ack_num_;
         src_ = other.src_;
@@ -64,17 +64,15 @@ public:
     uint32_t get_ack() const { return ack_num_; }
     uint16_t get_src_port() const { return src_; }
     uint16_t get_dst_port() const { return dst_; }
-
     uint16_t get_header_len() const { return header_len_; }
 
-
 private:
-    uint32_t seq_num_;
-    uint32_t ack_num_;
-    uint16_t src_;
-    uint16_t dst_;
-    char flags_;
-    uint16_t header_len_;
+    uint32_t seq_num_{0};
+    uint32_t ack_num_{0};
+    uint16_t src_{0};
+    uint16_t dst_{0};
+    char flags_{0};
+    uint16_t header_len_{0};
 };
 
 }  // namespace net_io_top
