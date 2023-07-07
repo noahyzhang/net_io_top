@@ -16,6 +16,10 @@
 
 namespace net_io_top {
 
+/**
+ * @brief 发送端和接收端的套接字封装
+ * 
+ */
 class SocketPair {
 public:
     SocketPair(const IPAddress& addrA, uint16_t portA, const IPAddress& addrB, uint16_t portB)
@@ -23,18 +27,53 @@ public:
         p_ip_addrA_ = addrA.clone();
         p_ip_addrB_ = addrB.clone();
     }
+
     SocketPair(const SocketPair& other)
         : portA_(other.portA_), portB_(other.portB_) {
         p_ip_addrA_ = other.p_ip_addrA_->clone();
         p_ip_addrB_ = other.p_ip_addrB_->clone();
     }
 
+    SocketPair& operator=(const SocketPair& other) {
+        portA_ = other.portA_;
+        portB_ = other.portB_;
+        p_ip_addrA_ = other.p_ip_addrA_->clone();
+        p_ip_addrB_ = other.p_ip_addrB_->clone();
+        return *this;
+    }
+
+    SocketPair(SocketPair&& other)
+        : portA_(other.portA_), portB_(other.portB_) {
+        other.portA_ = other.portB_ = 0;
+        p_ip_addrA_ = other.p_ip_addrA_;
+        p_ip_addrB_ = other.p_ip_addrB_;
+        other.p_ip_addrA_ = other.p_ip_addrB_ = nullptr;
+    }
+
+    SocketPair& operator=(SocketPair&& other) {
+        portA_ = other.portA_;
+        portB_ = other.portB_;
+        other.portA_ = other.portB_ = 0;
+        p_ip_addrA_ = other.p_ip_addrA_;
+        p_ip_addrB_ = other.p_ip_addrB_;
+        other.p_ip_addrA_ = other.p_ip_addrB_ = nullptr;
+        return *this;
+    }
+
     ~SocketPair() {
+        portA_ = portB_ = 0;
         delete p_ip_addrA_;
         delete p_ip_addrB_;
     }
 
 public:
+    /**
+     * @brief 比较函数，用于哈希表
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator==(const SocketPair& other) const {
         if ((*(other.p_ip_addrA_) == *(p_ip_addrA_))
             && (*(other.p_ip_addrB_) == *(p_ip_addrB_))
@@ -63,12 +102,13 @@ public:
     }
 
 private:
+    // IP 地址
     IPAddress* p_ip_addrA_;
     IPAddress* p_ip_addrB_;
+    // 端口
     uint16_t portA_;
     uint16_t portB_;
 };
-
 
 }  // namespace net_io_top
 

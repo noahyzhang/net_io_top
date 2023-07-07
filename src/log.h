@@ -41,13 +41,15 @@ public:
     Logger& operator=(Logger&&) = delete;
 
 public:
-    static std::ostream& start(LogLevel log_level, const int line, const std::string& func) {
+    static std::ostream& start(
+        LogLevel log_level, const std::string& filename,
+        const std::string& func, const int line) {
         time_t tm;
         time(&tm);
         char time_str[128];
-        strftime(time_str, sizeof(time_str), "[%Y-%m-%d %X] ", localtime(&tm));
+        strftime(time_str, sizeof(time_str), "[%Y-%m-%d %X]", localtime(&tm));
         return get_stream() << time_str << " [" << get_log_level_str(log_level) << "] "
-            << "func[" << func << "] " << "line[" << line << "] ";
+            << filename << " " << func << ":" << line << " ";
     }
 
     static std::ostream& get_stream() {
@@ -64,7 +66,7 @@ private:
 
 void init_logger(const std::string& filename);
 
-#define LOG(log_level) Logger().start(log_level, __LINE__, __FUNCTION__)
+#define LOG(log_level) Logger().start(log_level, __FILE__, __FUNCTION__, __LINE__)
 
 }  // namespace net_io_top
 

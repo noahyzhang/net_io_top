@@ -20,6 +20,10 @@
 
 namespace net_io_top {
 
+/**
+ * @brief TCP 报文主体
+ * 
+ */
 class TcpPacket {
 public:
     TcpPacket(const u_char* data, uint32_t data_len) {
@@ -28,56 +32,124 @@ public:
         // 只处理 IPv4 报文
         if (ip->ip_v == 4) {
             total_len_ = ntohs(ip->ip_len);
-            src_ = new IPv4Address(ip->ip_src);
-            dst_ = new IPv4Address(ip->ip_dst);
-            header_len_ = ip->ip_hl * 4;
+            ip_src_addr_ = new IPv4Address(ip->ip_src);
+            ip_dst_addr_ = new IPv4Address(ip->ip_dst);
+            ip_header_len_ = ip->ip_hl * 4;
         }
-        // TODO(noahyzhang): 还未处理 IPv6 报文
-        tcp_header_ = new TcpHeader(data+header_len_, data_len-header_len_);
-        socket_pair_ = new SocketPair(*src_, tcp_header_->get_src_port(), *dst_, tcp_header_->get_dst_port());
+        // TODO(noahyzhang): 暂未处理 IPv6 报文
+        tcp_header_ = new TcpHeader(data+ip_header_len_, data_len - ip_header_len_);
+        socket_pair_ = new SocketPair(
+            *ip_src_addr_, tcp_header_->get_src_port(),
+            *ip_dst_addr_, tcp_header_->get_dst_port());
     }
 
     TcpPacket(const TcpPacket& other) {
-        src_ = other.get_src_addr().clone();
-        dst_ = other.get_dst_addr().clone();
         total_len_ = other.total_len_;
-        header_len_ = other.header_len_;
+        ip_header_len_ = other.ip_header_len_;
+        ip_src_addr_ = other.get_src_addr().clone();
+        ip_dst_addr_ = other.get_dst_addr().clone();
         tcp_header_ = new TcpHeader(*other.tcp_header_);
         socket_pair_ = new SocketPair(*other.socket_pair_);
     }
 
+    TcpPacket& operator=(const TcpPacket& other) {
+        total_len_ = other.total_len_;
+        ip_header_len_ = other.ip_header_len_;
+        ip_src_addr_ = other.get_src_addr().clone();
+        ip_dst_addr_ = other.get_dst_addr().clone();
+        tcp_header_ = new TcpHeader(*other.tcp_header_);
+        socket_pair_ = new SocketPair(*other.socket_pair_);
+        return *this;
+    }
+
+    TcpPacket(TcpPacket&& other) {
+        total_len_ = other.total_len_;
+        ip_header_len_ = other.ip_header_len_;
+        other.total_len_ = other.ip_header_len_ = 0;
+        ip_src_addr_ = other.ip_src_addr_;
+        ip_dst_addr_ = other.ip_dst_addr_;
+        tcp_header_ = other.tcp_header_;
+        socket_pair_ = other.socket_pair_;
+        ip_src_addr_ = ip_dst_addr_ = nullptr;
+        tcp_header_ = nullptr;
+        socket_pair_ = nullptr;
+    }
+
+    TcpPacket& operator=(TcpPacket&& other) {
+        total_len_ = other.total_len_;
+        ip_header_len_ = other.ip_header_len_;
+        other.total_len_ = other.ip_header_len_ = 0;
+        ip_src_addr_ = other.ip_src_addr_;
+        ip_dst_addr_ = other.ip_dst_addr_;
+        tcp_header_ = other.tcp_header_;
+        socket_pair_ = other.socket_pair_;
+        ip_src_addr_ = ip_dst_addr_ = nullptr;
+        tcp_header_ = nullptr;
+        socket_pair_ = nullptr;
+        return *this;
+    }
+
     ~TcpPacket() {
-        delete src_;
-        delete dst_;
+        total_len_ = ip_header_len_ = 0;
+        delete ip_src_addr_;
+        delete ip_dst_addr_;
         delete tcp_header_;
         delete socket_pair_;
     }
 
 public:
+    /**
+     * @brief 返回报文总长度(从 IP 报头算起)
+     * 
+     * @return uint64_t 
+     */
     uint64_t get_total_len() const { return total_len_; }
-    uint32_t get_payload_len() const { return total_len_ - header_len_; }
-    const IPAddress& get_src_addr() const { return *src_; }
-    const IPAddress& get_dst_addr() const { return *dst_; }
+
+    /**
+     * @brief 返回报文主体长度（从 TCP 报头算起）
+     * 
+     * @return uint32_t 
+     */
+    uint32_t get_payload_len() const { return total_len_ - ip_header_len_; }
+
+    const IPAddress& get_src_addr() const { return *ip_src_addr_; }
+    const IPAddress& get_dst_addr() const { return *ip_dst_addr_; }
     const TcpHeader& get_tcp_header() const { return *tcp_header_; }
     const SocketPair& get_socket_pair() const { return *socket_pair_; }
 
 public:
+    /**
+     * @brief 创建一个 TCP 数据包
+     * 
+     * @param data 
+     * @param data_len 
+     * @return TcpPacket* 
+     */
     static TcpPacket* new_tcp_packet(const u_char* data, uint64_t data_len) {
         struct sniff_ip* ip = (struct sniff_ip*)data;
         // 校验 IPv4 报头
         if (ip->ip_v == 4 && ip->ip_p != IPPROTO_TCP) {
             return nullptr;
         }
-        // TODO(noahyzhang): 暂未校验 IPv6 报文
+        // 暂未处理 IPv6 报文
+        if (ip->ip_v == 6) {
+            return nullptr;
+        }
         return new TcpPacket(data, data_len);
     }
 
 private:
+    // 报文总长度（从 IP 头算起）
     uint64_t total_len_{0};
-    uint16_t header_len_{0};
-    IPAddress* src_{nullptr};
-    IPAddress* dst_{nullptr};
+    // IP 报文头部长度
+    uint16_t ip_header_len_{0};
+    // IP 源地址
+    IPAddress* ip_src_addr_{nullptr};
+    // IP 目的地址
+    IPAddress* ip_dst_addr_{nullptr};
+    // TCP 头部
     TcpHeader* tcp_header_{nullptr};
+    // socket 连接对
     SocketPair* socket_pair_{nullptr};
 };
 

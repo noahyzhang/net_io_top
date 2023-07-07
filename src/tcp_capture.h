@@ -16,6 +16,10 @@
 
 namespace net_io_top {
 
+/**
+ * @brief TCP 数据包的封装
+ * 
+ */
 class TcpCapture {
 public:
     TcpCapture(TcpPacket* tcp_packet, struct timeval ts)
@@ -32,12 +36,35 @@ public:
         ts_ = other.ts_;
     }
 
+    TcpCapture& operator=(const TcpCapture& other) {
+        packet_ = new TcpPacket(*other.packet_);
+        ts_ = other.ts_;
+        return *this;
+    }
+
+    TcpCapture(TcpCapture&& other) {
+        packet_ = other.packet_;
+        ts_ = other.ts_;
+        other.packet_ = nullptr;
+        ts_.tv_sec = ts_.tv_usec = 0;
+    }
+
+    TcpCapture& operator=(TcpCapture&& other) {
+        packet_ = other.packet_;
+        ts_ = other.ts_;
+        other.packet_ = nullptr;
+        ts_.tv_sec = ts_.tv_usec = 0;
+        return *this;
+    }
+
 public:
-    TcpPacket& get_packet() const { return *packet_; }
+    const TcpPacket& get_packet() const { return *packet_; }
     struct timeval get_timestamp() const { return ts_; }
 
 private:
+    // TCP 数据包
     TcpPacket* packet_;
+    // 时间
     struct timeval ts_;
 };
 

@@ -27,28 +27,31 @@ const uint8_t URG = 0x20;  // 紧急（紧急指针字段有效，很少被使�
 const uint8_t ECE = 0x40;  // ECN 回显（发送方接收到了一个更早的拥塞通告）
 const uint8_t CWR = 0x80;  // 拥塞窗口减少（发送方降低它的发送速率）
 
+/**
+ * @brief TCP 的头部
+ * 
+ */
 class TcpHeader {
 public:
     TcpHeader(const u_char* data, uint32_t data_len) {
+        // 先保留
+        (void)(data_len);
         struct sniff_tcp* tcp = (struct sniff_tcp*)data;
         // tcp header 至少 20 字节
         // 构造函数中暂不做判断，假定此 tcp 报文没有问题
         // tcp->th_off >= 5;
-        src_ = ntohs(tcp->th_sport);
-        dst_ = ntohs(tcp->th_dport);
+        src_port_ = ntohs(tcp->th_sport);
+        dst_port_ = ntohs(tcp->th_dport);
         seq_num_ = ntohl(tcp->th_seq);
         ack_num_ = ntohl(tcp->th_ack);
         flags_ = tcp->th_flags;
         header_len_ = tcp->th_off * 4;
     }
-    TcpHeader(const TcpHeader& other) {
-        seq_num_ = other.seq_num_;
-        ack_num_ = other.ack_num_;
-        src_ = other.src_;
-        dst_ = other.dst_;
-        flags_ = other.flags_;
-        header_len_ = other.header_len_;
-    }
+    ~TcpHeader() = default;
+    TcpHeader(const TcpHeader&) = default;
+    TcpHeader& operator=(const TcpHeader&) = default;
+    TcpHeader(TcpHeader&&) = delete;
+    TcpHeader& operator=(TcpHeader&&) = delete;
 
 public:
     bool is_FIN() const { return flags_ & FIN; }
@@ -62,16 +65,22 @@ public:
 
     uint32_t get_seq() const { return seq_num_; }
     uint32_t get_ack() const { return ack_num_; }
-    uint16_t get_src_port() const { return src_; }
-    uint16_t get_dst_port() const { return dst_; }
+    uint16_t get_src_port() const { return src_port_; }
+    uint16_t get_dst_port() const { return dst_port_; }
     uint16_t get_header_len() const { return header_len_; }
 
 private:
+    // tcp 报头顺序号
     uint32_t seq_num_{0};
+    // tcp 报头确认号
     uint32_t ack_num_{0};
-    uint16_t src_{0};
-    uint16_t dst_{0};
+    // tcp 报头源端口号
+    uint16_t src_port_{0};
+    // tcp 报头目的端口号
+    uint16_t dst_port_{0};
+    // tcp 报头的标志位
     char flags_{0};
+    // tcp 报头的长度（数据偏移*4）
     uint16_t header_len_{0};
 };
 

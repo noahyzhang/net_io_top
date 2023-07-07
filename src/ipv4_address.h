@@ -19,14 +19,36 @@
 
 namespace net_io_top {
 
+/**
+ * @brief IPv4 地址
+ * 继承自 IPAddress 类
+ */
 class IPv4Address : public IPAddress {
 public:
     explicit IPv4Address(struct in_addr addr) : addr_(addr) {}
-    IPv4Address(const IPv4Address& addr) { addr_ = addr.addr_; }
+    IPv4Address(const IPv4Address& addr) = default;
+    IPv4Address& operator=(const IPv4Address& addr) = default;
+    IPv4Address(IPv4Address&& addr) = default;
+    IPv4Address& operator=(IPv4Address&& addr) = default;
 
 public:
-    virtual int get_type() const { return 4; }
-    virtual bool operator==(const IPAddress& addr) const {
+    /**
+     * @brief 获取 IP 协议的类型
+     * 
+     * @return int 
+     */
+    int get_type() const override {
+        return 4;
+    }
+
+    /**
+     * @brief 判断相等
+     * 
+     * @param addr 
+     * @return true 
+     * @return false 
+     */
+    bool operator==(const IPAddress& addr) const override {
         if (addr.get_type() != get_type()) {
             return false;
         }
@@ -36,7 +58,13 @@ public:
         }
         return ipv4_addr->addr_.s_addr == addr_.s_addr;
     }
-    virtual char* ptr() const {
+
+    /**
+     * @brief 返回可视化的 IP 地址
+     * 
+     * @return char* 
+     */
+    char* ptr() const override {
         static char ascii[16];
         uint32_t i_addr = ntohl(addr_.s_addr);
         int oc1 = (i_addr & 0xFF000000) / 16777216;
@@ -47,15 +75,26 @@ public:
         return ascii;
     }
 
-    virtual uint32_t hash() const {
+    /**
+     * @brief 获取 hash 值
+     * 
+     * @return uint32_t 
+     */
+    uint32_t hash() const override {
         return addr_.s_addr;
     }
 
-    virtual IPAddress* clone() const {
+    /**
+     * @brief 拷贝
+     * 
+     * @return IPAddress* 
+     */
+    IPAddress* clone() const override {
         return new IPv4Address(addr_);
     }
 
 private:
+    // IP 地址
     struct in_addr addr_;
 };
 

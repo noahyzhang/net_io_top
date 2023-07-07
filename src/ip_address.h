@@ -16,10 +16,18 @@
 
 namespace net_io_top {
 
+/**
+ * @brief IP 地址类
+ * 作为基类，可以由 IPv4、IPv6 等类继承
+ */
 class IPAddress {
 public:
     IPAddress() = default;
     virtual ~IPAddress() = default;
+    IPAddress(const IPAddress&) = default;
+    IPAddress& operator=(const IPAddress&) = default;
+    IPAddress(IPAddress&&) = default;
+    IPAddress& operator=(IPAddress&&) = default;
 
 public:
     virtual int get_type() const = 0;
