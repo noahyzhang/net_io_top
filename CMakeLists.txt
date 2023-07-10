@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.25.0)
 project(net_io_top)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMKAE_CXX_FLAGS} -g")
 
 include_directories(
-    src/
+    src
 )
 
 file(GLOB_RECURSE SRCS src/*.cpp)
