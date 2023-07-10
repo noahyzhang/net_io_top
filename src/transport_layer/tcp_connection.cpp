@@ -1,5 +1,5 @@
 #include <time.h>
-#include "tcp_connection.h"
+#include "transport_layer/tcp_connection.h"
 
 namespace net_io_top {
 
@@ -21,14 +21,7 @@ TcpConnection::TcpConnection(const TcpCapture& p) {
     cur_period_tcp_payload_bytes_ = p.get_packet().get_payload_len() - p.get_packet().get_tcp_header().get_header_len();
     cur_period_all_bytes_ = p.get_packet().get_total_len();
     all_tcp_payload_bytes_ = p.get_packet().get_payload_len() - p.get_packet().get_tcp_header().get_header_len();
-
-    last_pkt_ts_ = time(nullptr);
-
-    fm_bps_ = 0;
-    fin_ack_from_dst_ = 0;
-    fin_ack_from_src_ = 0;
-    recvd_fin_ack_from_src_ = false;
-    recvd_fin_ack_from_dst_ = false;
+    cur_pkt_ts_ = time(NULL);
 }
 
 TcpConnection::~TcpConnection() {
@@ -63,20 +56,25 @@ bool TcpConnection::accept_packet(const TcpCapture& t_cap) {
         update_counter_for_packet(t_cap);
         // 此报文是 FIN 报文
         if (t_packet.get_tcp_header().is_FIN()) {
-            // 确定是源报文还是目的报文
+            // 确定是源还是目的发送的 FIN
+            // FIN 报文来自于源端
             if (t_packet.get_src_addr() == *src_addr_) {
+                // 来自于目的端的 FIN&ACK 报文的序号
                 if (tcp_payload_len == 0) {
                     fin_ack_from_dst_ = t_packet.get_tcp_header().get_seq() + 1;
                 } else {
                     fin_ack_from_dst_ = t_packet.get_tcp_header().get_seq() + tcp_payload_len + 1;
                 }
+                // 还未收到来自于目的端的 FIN&ACK, 先将此变量设置为 false
                 recvd_fin_ack_from_dst_ = false;
-            } else if (t_packet.get_src_addr() == *dst_addr_) {
+            } else if (t_packet.get_src_addr() == *dst_addr_) {  // FIN 报文来自于目的端
+            // 来自于源端的 FIN&ACK 报文的序号
                 if (tcp_payload_len == 0) {
                     fin_ack_from_src_ = t_packet.get_tcp_header().get_seq() + 1;
                 } else {
                     fin_ack_from_src_ = t_packet.get_tcp_header().get_seq() + tcp_payload_len + 1;
                 }
+                // 应该需要收到来自于源端的 FIN&ACK, 先将此变量设置为 false
                 recvd_fin_ack_from_src_ = false;
             }
         }
@@ -108,7 +106,7 @@ bool TcpConnection::accept_packet(const TcpCapture& t_cap) {
                         recvd_fin_ack_from_dst_ = true;
                     }
                 }
-                if (recvd_fin_ack_from_src_ && recvd_fin_ack_from_dst_) {
+                if (recvd_fin_ack_from_src_ || recvd_fin_ack_from_dst_) {
                     state_ = TCP_STATE_CLOSED;
                 }
             }
@@ -117,19 +115,19 @@ bool TcpConnection::accept_packet(const TcpCapture& t_cap) {
         if (t_packet.get_tcp_header().is_RST()) {
             state_ = TCP_STATE_RESET;
         }
-        last_pkt_ts_ = time(nullptr);
+        cur_pkt_ts_ = time(NULL);
         return true;
     }
     return false;
 }
 
 void TcpConnection::re_calc_avg() {
-    if (cur_period_tm_s_ != time(0)) {
+    if (cur_period_tm_s_ != time(nullptr)) {
         last_period_packet_count_ = cur_period_packet_count_;
         last_period_tcp_payload_bytes_ = cur_period_tcp_payload_bytes_;
         last_period_all_bytes_ = cur_period_all_bytes_;
 
-        cur_period_tm_s_ = time(0);
+        cur_period_tm_s_ = time(nullptr);
         cur_period_packet_count_ = 0;
         cur_period_tcp_payload_bytes_ = 0;
         cur_period_all_bytes_ = 0;

@@ -13,10 +13,10 @@
 #define SRC_TCP_PACKET_H_
 
 #include <stdint.h>
-#include "tcp_header.h"
-#include "ip_address.h"
-#include "ipv4_address.h"
-#include "socket_pair.h"
+#include "transport_layer/tcp_header.h"
+#include "network_layer/ip_address.h"
+#include "network_layer/ipv4_address.h"
+#include "transport_layer/socket_pair.h"
 
 namespace net_io_top {
 

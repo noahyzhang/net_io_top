@@ -13,7 +13,7 @@
 #define SRC_SNIFFER_H_
 
 #include <string>
-#include "packet_buffer.h"
+#include "dispatch/packet_buffer.h"
 #include "pcap/pcap.h"
 
 namespace net_io_top {

@@ -67,7 +67,7 @@ struct sniff_ip {
     u_short ip_off;
     // 8 位的生存时间
     u_char ip_ttl;
-    // 8 位协议
+    // 8 位协议，比如：TCP:6, UDP:17, ICMP:1
     u_char ip_p;
     // 16 位的首部校验和
     u_short ip_sum;
@@ -98,6 +98,21 @@ struct sniff_tcp {
     u_short th_sum;
     // urgent pointer
     u_short th_urp;
+};
+
+/**
+ * @brief UDP 报头
+ * 
+ */
+struct sniff_udp {
+    // 源端口号
+    uint16_t src_port;
+    // 目的端口号
+    uint16_t dst_port;
+    // 数据包长度
+    uint16_t len;
+    // 校验和
+    uint16_t checksum;
 };
 
 }  // namespace net_io_top

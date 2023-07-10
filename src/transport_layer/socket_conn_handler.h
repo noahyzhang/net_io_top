@@ -15,8 +15,8 @@
 #include <functional>
 #include <unordered_map>
 #include <vector>
-#include "tcp_connection.h"
-#include "tcp_capture.h"
+#include "transport_layer/tcp_connection.h"
+#include "transport_layer/tcp_capture.h"
 
 namespace net_io_top {
 

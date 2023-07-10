@@ -12,7 +12,7 @@
 #ifndef SRC_SOCKET_PAIR_H_
 #define SRC_SOCKET_PAIR_H_
 
-#include "ip_address.h"
+#include "network_layer/ip_address.h"
 
 namespace net_io_top {
 
@@ -103,11 +103,11 @@ public:
 
 private:
     // IP 地址
-    IPAddress* p_ip_addrA_;
-    IPAddress* p_ip_addrB_;
+    IPAddress* p_ip_addrA_{nullptr};
+    IPAddress* p_ip_addrB_{nullptr};
     // 端口
-    uint16_t portA_;
-    uint16_t portB_;
+    uint16_t portA_{0};
+    uint16_t portB_{0};
 };
 
 }  // namespace net_io_top

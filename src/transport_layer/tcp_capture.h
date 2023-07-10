@@ -12,7 +12,7 @@
 #ifndef SRC_TCP_CAPTURE_H_
 #define SRC_TCP_CAPTURE_H_
 
-#include "tcp_packet.h"
+#include "transport_layer/tcp_packet.h"
 
 namespace net_io_top {
 

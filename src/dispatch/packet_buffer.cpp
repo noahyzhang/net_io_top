@@ -1,8 +1,8 @@
 #include <errno.h>
 #include <string.h>
-#include "log.h"
-#include "common.h"
-#include "packet_buffer.h"
+#include "common/log.h"
+#include "common/common.h"
+#include "dispatch/packet_buffer.h"
 
 namespace net_io_top {
 

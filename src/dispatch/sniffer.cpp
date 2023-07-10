@@ -1,8 +1,8 @@
 #include <string.h>
 #include <errno.h>
-#include "common.h"
-#include "log.h"
-#include "sniffer.h"
+#include "common/common.h"
+#include "common/log.h"
+#include "dispatch/sniffer.h"
 
 namespace net_io_top {
 
@@ -183,33 +183,40 @@ PacketData* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkthdr
 bool Sniffer::check_packet_data(struct PacketData* packet) {
     struct sniff_ip* ip = reinterpret_cast<struct sniff_ip*>(packet->p_data);
     // 暂不支持 IPv6
-    if (ip->ip_v == 6) {
+    if (ip->ip_v != 4) {
+        LOG(ERROR) << "just support IPv4 packet, ip_v: " << ip->ip_v;
         return false;
     }
+    // 包的长度太小，都不够一个头部长度
     unsigned int ip_header_len = ip->ip_hl * 4;
     if (packet->len < ip_header_len + TCP_HEADER_LEN) {
+        LOG(ERROR) << "packet length is invalid, too small";
         return false;
     }
-    if (ip->ip_v != 4) {
-        return false;
-    }
+    // 包中含有的 IP 报文检测失败
     if (ntohs(ip->ip_len) < ip_header_len + TCP_HEADER_LEN) {
+        LOG(ERROR) << "ip length is invalid, too small";
         return false;
     }
+    // IP 首部长度一定是大于等于 5，IP 报头最小 20 字节
     if (ip->ip_hl < 5) {
+        LOG(ERROR) << "ip header length is invalid, too small";
         return false;
     }
+    // 目前仅处理 TCP 报文
     if (ip->ip_p != IPPROTO_TCP) {
+        LOG(WARN) << "just support TCP packet, ip_p: " << (int)ip->ip_p;
         return false;
     }
+    // TCP 报头至少 20 字节
     struct sniff_tcp* tcp = (struct sniff_tcp*)(packet->p_data + ip_header_len);
     if (tcp->th_off < 5) {
+        LOG(WARN) << "tcp header length is invalid, too small";
         return false;
     }
-    if (tcp->th_sport == 0) {
-        return false;
-    }
-    if (tcp->th_dport == 0) {
+    // tcp 端口号错误
+    if (tcp->th_sport == 0 || tcp->th_dport == 0) {
+        LOG(WARN) << "tcp port number is invalid, sport: " << tcp->th_sport << ", dport: " << tcp->th_dport;
         return false;
     }
     return true;

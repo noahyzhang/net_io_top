@@ -2,10 +2,10 @@
 #include <error.h>
 #include <utility>
 #include <algorithm>
-#include "config.h"
-#include "common.h"
-#include "log.h"
-#include "socket_conn_handler.h"
+#include "common/config.h"
+#include "common/common.h"
+#include "common/log.h"
+#include "transport_layer/socket_conn_handler.h"
 
 namespace net_io_top {
 
@@ -31,8 +31,10 @@ int SocketConnHandler::process_packet(const TcpCapture& t_cap) {
     // 判断这个包是不是已有连接
     auto iter = conn_hash_.find(sp);
     if (iter != conn_hash_.end()) {
-        LOG(DEBUG) << "capture packet, src: " << t_cap.get_packet().get_src_addr().ptr()
-            << ", dst:" << t_cap.get_packet().get_dst_addr().ptr();
+        // LOG(DEBUG) << "capture packet, src: " << t_cap.get_packet().get_src_addr().ptr()
+        //     << ":" << t_cap.get_packet().get_tcp_header().get_src_port()
+        //     << ", dst:" << t_cap.get_packet().get_dst_addr().ptr()
+        //     << ":" << t_cap.get_packet().get_tcp_header().get_dst_port();
         if (iter->second->accept_packet(t_cap)) {
             found = true;
         }
@@ -53,18 +55,18 @@ int SocketConnHandler::process_packet(const TcpCapture& t_cap) {
 }
 
 std::vector<TcpConnection*> SocketConnHandler::get_sorted_conns() {
-    std::vector<TcpConnection*> sorted_conns(conn_hash_.size(), nullptr);
+    std::vector<TcpConnection*> sorted_conns;
     // 在锁内，先移除过期的连接，然后放入数组容器中
     pthread_mutex_lock(&conn_hash_lock_);
     remove_overdue_conn();
     for (auto it = conn_hash_.begin(); it != conn_hash_.end(); ++it) {
-        sorted_conns.push_back(it->second);
+        sorted_conns.emplace_back(it->second);
     }
     pthread_mutex_unlock(&conn_hash_lock_);
     // 排序
     std::sort(sorted_conns.begin(), sorted_conns.end(),
         [](TcpConnection* c1, TcpConnection* c2) ->bool {
-        if (c1->get_payload_bytes_per_second() > c2->get_payload_bytes_per_second()) {
+        if (c1->get_all_tcp_payload_bytes() > c2->get_all_tcp_payload_bytes()) {
             return false;
         } else {
             return true;
