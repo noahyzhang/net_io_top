@@ -65,7 +65,7 @@ int SocketConnHandler::process_tcp_packet(const TcpPacket& tcp_packet) {
         && !(tcp_packet.get_tcp_header().is_ACK())) {
         TcpConnection* new_conn = new TcpConnection(tcp_packet);
         conn_hash_.emplace(sp, new_conn);
-        LOG(DEBUG) << "receive new connection, src: "
+        LOG(DEBUG) << "receive new tcp connection, src: "
             << new_conn->get_src_addr().ptr() << ":" << new_conn->get_src_port()
             << ", dst: " << new_conn->get_dst_addr().ptr() << ":" << new_conn->get_dst_port();
     }

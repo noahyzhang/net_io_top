@@ -33,16 +33,18 @@ int main() {
     for (;;) {
         auto sorted_conns = conn_handler->get_sorted_conns();
         for (const auto& conn : sorted_conns) {
-            // std::cout << "conn: " << conn->get_src_addr().ptr() << ":" << conn->get_src_port() << ", "
-            //     << conn->get_dst_addr().ptr() << ":" << conn->get_dst_port()
-            //     << ", packet count: " << conn->get_packet_count()
-            //     << ", all_tcp_payload_bytes: " << conn->get_all_tcp_payload_bytes()
-            //     << ", period packet count: " << conn->get_last_period_packet_count()
-            //     << ", period tcp_payload_bytes: " << conn->get_last_period_tcp_payload_bytes()
-            //     << ", period all_bytes: " << conn->get_last_period_all_bytes()
-            //     << std::endl
-            //     << std::endl;
+            std::cout << "conn: " << conn->get_src_addr().ptr() << ":" << conn->get_src_port() << ", "
+                << conn->get_dst_addr().ptr() << ":" << conn->get_dst_port()
+                << ", packet count: " << conn->get_all_packet_count()
+                << ", packet bytes: " << conn->get_all_packet_bytes()
+                // << ", packet count: " << conn->get_packet_count()
+                // << ", all_tcp_payload_bytes: " << conn->get_all_tcp_payload_bytes()
+                // << ", period packet count: " << conn->get_last_period_packet_count()
+                // << ", period tcp_payload_bytes: " << conn->get_last_period_tcp_payload_bytes()
+                // << ", period all_bytes: " << conn->get_last_period_all_bytes()
+                << std::endl;
         }
+        std::cout << std::endl << std::endl;
         sleep(1);
     }
     return 0;
