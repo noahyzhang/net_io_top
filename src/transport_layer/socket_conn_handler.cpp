@@ -2,9 +2,11 @@
 #include <error.h>
 #include <utility>
 #include <algorithm>
-#include "common/config.h"
 #include "common/common.h"
+#include "common/config.h"
+#include "network_layer/ipv4_packet.h"
 #include "common/log.h"
+#include "transport_layer/transport_packet.h"
 #include "transport_layer/socket_conn_handler.h"
 
 namespace net_io_top {
@@ -21,31 +23,82 @@ SocketConnHandler::~SocketConnHandler() {
     conn_hash_.clear();
 }
 
-int SocketConnHandler::process_packet(const TcpCapture& t_cap) {
+int SocketConnHandler::process_packet(const IPv4Packet& ip_packet) {
+    if (ip_packet.get_ip_protocol() == IPPROTO_TCP) {
+        TcpPacket tcp_packet(
+            ip_packet.get_ip_src_addr(), ip_packet.get_ip_dst_addr(),
+            ip_packet.get_ip_body(), ip_packet.get_ip_body_len());
+        return process_tcp_packet(tcp_packet);
+    } else if (ip_packet.get_ip_protocol() == IPPROTO_UDP) {
+        UdpPacket udp_packet(
+            ip_packet.get_ip_src_addr(), ip_packet.get_ip_dst_addr(),
+            ip_packet.get_ip_body(), ip_packet.get_ip_body_len());
+        return process_udp_packet(udp_packet);
+    } else {
+        LOG(ERROR) << "just support TCP/UDP protocol";
+        return -1;
+    }
+    return 0;
+}
+
+int SocketConnHandler::process_tcp_packet(const TcpPacket& tcp_packet) {
     bool found = false;
-    SocketPair sp(t_cap.get_packet().get_src_addr(),
-        t_cap.get_packet().get_tcp_header().get_src_port(),
-        t_cap.get_packet().get_dst_addr(),
-        t_cap.get_packet().get_tcp_header().get_dst_port());
+    SocketPair sp(
+        TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_TCP,
+        tcp_packet.get_src_addr(),
+        tcp_packet.get_src_port(),
+        tcp_packet.get_dst_addr(),
+        tcp_packet.get_dst_port());
     pthread_mutex_lock(&conn_hash_lock_);
     // 判断这个包是不是已有连接
     auto iter = conn_hash_.find(sp);
     if (iter != conn_hash_.end()) {
-        // LOG(DEBUG) << "capture packet, src: " << t_cap.get_packet().get_src_addr().ptr()
-        //     << ":" << t_cap.get_packet().get_tcp_header().get_src_port()
-        //     << ", dst:" << t_cap.get_packet().get_dst_addr().ptr()
-        //     << ":" << t_cap.get_packet().get_tcp_header().get_dst_port();
-        if (iter->second->accept_packet(t_cap)) {
-            found = true;
+        Connection* conn = iter->second;
+        if (conn->get_protocol() == TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_TCP) {
+            if (((TcpConnection*)conn)->accept_packet(tcp_packet)) {
+                found = true;
+            }
         }
     }
     // 如果是一个新连接
     if (found == false
-        && (t_cap.get_packet().get_tcp_header().is_SYN())
-        && !(t_cap.get_packet().get_tcp_header().is_ACK())) {
-        TcpConnection* new_conn = new TcpConnection(t_cap);
+        && (tcp_packet.get_tcp_header().is_SYN())
+        && !(tcp_packet.get_tcp_header().is_ACK())) {
+        TcpConnection* new_conn = new TcpConnection(tcp_packet);
         conn_hash_.emplace(sp, new_conn);
         LOG(DEBUG) << "receive new connection, src: "
+            << new_conn->get_src_addr().ptr() << ":" << new_conn->get_src_port()
+            << ", dst: " << new_conn->get_dst_addr().ptr() << ":" << new_conn->get_dst_port();
+    }
+    // TODO(noahyzhang): 走到这里，这是一个什么包？
+    pthread_mutex_unlock(&conn_hash_lock_);
+    return 0;
+}
+
+int SocketConnHandler::process_udp_packet(const UdpPacket& udp_packet) {
+bool found = false;
+    SocketPair sp(
+        TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_UDP,
+        udp_packet.get_src_addr(),
+        udp_packet.get_src_port(),
+        udp_packet.get_dst_addr(),
+        udp_packet.get_dst_port());
+    pthread_mutex_lock(&conn_hash_lock_);
+    // 判断这个包是不是已有连接
+    auto iter = conn_hash_.find(sp);
+    if (iter != conn_hash_.end()) {
+        Connection* conn = iter->second;
+        if (conn->get_protocol() == TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_UDP) {
+            if (((UdpConnection*)conn)->accept_packet(udp_packet)) {
+                found = true;
+            }
+        }
+    }
+    // 如果是一个新连接
+    if (found == false) {
+        UdpConnection* new_conn = new UdpConnection(udp_packet);
+        conn_hash_.emplace(sp, new_conn);
+        LOG(DEBUG) << "receive new udp connection, src: "
             << new_conn->get_src_addr().ptr() << ":" << new_conn->get_src_port()
             << ", dst: " << new_conn->get_dst_addr().ptr() << ":" << new_conn->get_dst_port();
     }

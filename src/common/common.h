@@ -25,15 +25,17 @@ namespace net_io_top {
 #define SYN_SYNACK_WAIT 30
 #define FIN_FINACK_WAIT 60
 
-/**
- * @brief 数据报文
- * 
- */
-struct PacketData {
+struct IpPacketWrap {
     // 这个指针指向 malloc 出来的内存块，不要忘记释放
-    u_char* p_data;
-    uint64_t len;
+    // 这个指针从 IP 报头开始
+    u_char* ip_data;
+    uint64_t ip_data_len;
     struct timeval ts;
+};
+
+enum TransportLayerProtocol {
+    TRANSPORT_LAYER_PROTOCOL_TCP = 0,
+    TRANSPORT_LAYER_PROTOCOL_UDP
 };
 
 }  // namespace net_io_top

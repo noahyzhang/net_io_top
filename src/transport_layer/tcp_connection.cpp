@@ -39,7 +39,7 @@ bool TcpConnection::match(const IPAddress& sa, const IPAddress& da, uint16_t sp,
     return true;
 }
 
-bool TcpConnection::accept_packet(const TcpCapture& t_cap) {
+bool TcpConnection::accept_packet(const TcpPacket& t_cap) {
     // 如果是关闭 TCP 连接的报文，不处理
     if (state_ == TCP_STATE_CLOSED) {
         return false;

@@ -43,7 +43,7 @@ struct avg_stat {
  * @brief TCP 的连接
  * 
  */
-class TcpConnection {
+class TcpConnection : public Connection {
 public:
     explicit TcpConnection(const TcpCapture& p);
     ~TcpConnection();
@@ -53,11 +53,43 @@ public:
     TcpConnection& operator=(TcpConnection&&) = delete;
 
 public:
-    IPAddress& get_src_addr() const { return *src_addr_; }
-    uint16_t get_src_port() { return src_port_; }
-    IPAddress& get_dst_addr() { return *dst_addr_;}
-    uint16_t get_dst_port() { return dst_port_; }
+    inline TransportLayerProtocol get_protocol() const override {
+        return TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_TCP;
+    }
+    inline const IPAddress& get_src_addr() const override { return *src_addr_; }
+    inline const IPAddress& get_dst_addr() const override { return *dst_addr_; }
+    inline uint16_t get_src_port() const override { return src_port_; }
+    inline uint16_t get_dst_port() const override { return dst_port_; }
 
+    inline uint64_t get_forward_packet_count() const override { return forward_packet_count_; }
+    inline uint64_t get_forward_packet_bytes() const override { return forward_packet_bytes_; }
+    inline uint64_t get_backward_packet_count() const override { return backward_packet_count_; }
+    inline uint64_t get_backward_packet_bytes() const override { return backward_packet_bytes_; }
+
+    inline uint64_t get_cur_period_forward_packet_count() const override { return cur_period_forward_packet_count_; }
+    inline uint64_t get_cur_period_forward_packet_bytes() const override { return cur_period_forward_packet_bytes_; }
+    inline uint64_t get_cur_period_backward_packet_count() const override { return cur_period_backward_packet_count_; }
+    inline uint64_t get_cur_period_backward_packet_bytes() const override { return cur_period_backward_packet_bytes_; }
+
+    inline uint64_t exchange_cur_period_forward_packet_count(uint64_t val) override {
+        std::swap(cur_period_forward_packet_count_, val);
+        return val;
+    }
+    inline uint64_t exchange_cur_period_forward_packet_bytes(uint64_t val) override {
+        std::swap(cur_period_forward_packet_bytes_, val);
+        return val;
+    }
+    inline uint64_t exchange_cur_period_backward_packet_count(uint64_t val) override {
+        std::swap(cur_period_backward_packet_count_, val);
+        return val;
+    }
+    inline uint64_t exchange_cur_period_backward_packet_bytes(uint64_t val) override {
+        std::swap(cur_period_backward_packet_bytes_, val);
+        return val;
+    }
+
+
+public:
     int get_packet_count() { return packet_count_; }
     int64_t get_all_tcp_payload_bytes() { return all_tcp_payload_bytes_; }
     TCP_STATE_TYPE get_state() { return state_; }
@@ -81,21 +113,51 @@ public:
 
 public:
     bool match(const IPAddress& sa, const IPAddress& da, uint16_t sp, uint16_t dp) const;
-
-    /**
-     * @brief 处理 TCP 数据包
-     * 
-     * @param cap 
-     * @return true 
-     * @return false 
-     */
-    bool accept_packet(const TcpCapture& cap);
     void re_calc_avg();
 
-private:
-    void update_counter_for_packet(const TcpCapture& p);
+    int accept_packet(const TcpPacket& tcp_packet) {
+        if ((tcp_packet.get_src_addr() == *src_addr_ && tcp_packet.get_src_port() == src_port_)
+            && (tcp_packet.get_dst_addr() == *dst_addr_ && tcp_packet.get_dst_port() == dst_port_)) {
+            forward_packet_count_ += 1;
+            forward_packet_bytes_ += tcp_packet.get_tcp_header().get_tcp_packet_len();
+            cur_period_forward_packet_count_ += 1;
+            cur_period_forward_packet_bytes_ += tcp_packet.get_tcp_header().get_tcp_packet_len();
+
+        } else if ((tcp_packet.get_src_addr() == *dst_addr_ && tcp_packet.get_src_port() == dst_port_)
+            && (tcp_packet.get_dst_addr() == *src_addr_ && tcp_packet.get_dst_port() == src_port_)) {
+            backward_packet_count_ += 1;
+            backward_packet_bytes_ += tcp_packet.get_tcp_header().get_tcp_packet_len();
+            cur_period_backward_packet_count_ += 1;
+            cur_period_backward_packet_bytes_ += tcp_packet.get_tcp_header().get_tcp_packet_len();
+        } else {
+            return -1;
+        }
+        return 0;
+    }
 
 private:
+    void update_counter_for_packet(const TcpPacket& p);
+
+private:
+    // 源 IP 地址和目的 IP 地址
+    IPAddress* src_addr_{nullptr};
+    IPAddress* dst_addr_{nullptr};
+    // 源端口和目的端口
+    uint16_t src_port_{0};
+    uint16_t dst_port_{0};
+
+
+    uint64_t forward_packet_count_{0};
+    uint64_t forward_packet_bytes_{0};
+    uint64_t cur_period_forward_packet_count_{0};
+    uint64_t cur_period_forward_packet_bytes_{0};
+
+    uint64_t backward_packet_count_{0};
+    uint64_t backward_packet_bytes_{0};
+    uint64_t cur_period_backward_packet_count_{0};
+    uint64_t cur_period_backward_packet_bytes_{0};
+
+
     // 来自于目的端的 FIN&ACK 的报文序号
     uint64_t fin_ack_from_dst_{0};
     // 来自于源端的 FIN&ACK 的报文序号
@@ -104,14 +166,6 @@ private:
     bool recvd_fin_ack_from_src_{false};
     // 接收到来自于目的端的 FIN&ACK 报文
     bool recvd_fin_ack_from_dst_{false};
-
-
-    // 源端口和目的端口
-    uint16_t src_port_{0};
-    uint16_t dst_port_{0};
-    // 源 IP 地址和目的 IP 地址
-    IPAddress* src_addr_{nullptr};
-    IPAddress* dst_addr_{nullptr};
 
     // 当前报文 TCP 的状态
     TCP_STATE_TYPE state_;

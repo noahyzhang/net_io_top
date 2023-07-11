@@ -44,13 +44,16 @@ public:
      * @brief 添加数据包到缓冲区
      * 
      */
-    void push_packet(struct PacketData*);
+    void push_packet(struct IpPacketWrap*);
 
     /**
      * @brief 处理数据包
      * 
      */
     void maint_thread_run();
+
+private:
+    int check_ip_packet(struct IpPacketWrap*);
 
 public:
     /**
@@ -71,10 +74,10 @@ private:
     uint64_t packet_count_{0};
     pthread_mutex_t inq_lock_;
     pthread_cond_t inq_flag_;
-    std::queue<struct PacketData*> queue1_;
-    std::queue<struct PacketData*> queue2_;
-    std::queue<struct PacketData*>* in_queue_{nullptr};
-    std::queue<struct PacketData*>* out_queue_{nullptr};
+    std::queue<struct IpPacketWrap*> queue1_;
+    std::queue<struct IpPacketWrap*> queue2_;
+    std::queue<struct IpPacketWrap*>* in_queue_{nullptr};
+    std::queue<struct IpPacketWrap*>* out_queue_{nullptr};
     // 处理数据包的对象
     SocketConnHandler* conn_handler_{nullptr};
 };

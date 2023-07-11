@@ -31,7 +31,8 @@ public:
         src_port_ = ntohs(udp->src_port);
         dst_port_ = ntohs(udp->dst_port);
         // 最小值为 8 字节，假定他是正确的
-        packet_len_ = ntohs(udp->packet_len);
+        udp_packet_len_ = ntohs(udp->len);
+        udp_payload_len_ = udp_packet_len_ - 8;
     }
     ~UdpHeader() = default;
     UdpHeader(const UdpHeader&) = delete;
@@ -42,15 +43,18 @@ public:
 public:
     inline uint16_t get_src_port() const { return src_port_; }
     inline uint16_t get_dst_port() const { return dst_port_; }
-    inline uint16_t get_packet_len() const { return packet_len_; }
+    inline uint16_t get_udp_packet_len() const { return udp_packet_len_; }
+    inline uint64_t get_udp_payload_len() const { return udp_payload_len_; }
 
 private:
     // 源端口号
     uint16_t src_port_{0};
     // 目的端口号
     uint16_t dst_port_{0};
-    // 数据包长度
-    uint16_t packet_len_{0};
+    // 数据包长度(包括 UDP 报头)
+    uint16_t udp_packet_len_{0};
+    // UDP payload 长度（不包括 UDP 报头）
+    uint64_t udp_payload_len_{0};
     // 校验值不用管它了，当他是正确的
 };
 

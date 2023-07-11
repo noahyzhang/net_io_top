@@ -16,7 +16,11 @@
 #include <unordered_map>
 #include <vector>
 #include "transport_layer/tcp_connection.h"
+#include "transport_layer/udp_connection.h"
 #include "transport_layer/tcp_capture.h"
+#include "transport_layer/connection.h"
+#include "transport_layer/tcp_packet.h"
+#include "transport_layer/udp_packet.h"
 
 namespace net_io_top {
 
@@ -51,7 +55,8 @@ public:
      * @param t_cap 
      * @return int 
      */
-    int process_packet(const TcpCapture& t_cap);
+    // int process_packet(const TcpCapture& t_cap);
+    int process_packet(const IPv4Packet& ip_packet);
 
     /**
      * @brief 获取已经排序的的 socket 连接信息
@@ -59,6 +64,11 @@ public:
      * @return std::vector<TcpConnection*> 
      */
     std::vector<TcpConnection*> get_sorted_conns();
+
+private:
+    int process_tcp_packet(const TcpPacket& tcp_packet);
+    int process_udp_packet(const UdpPacket& udp_packet);
+
 
 private:
     /**
@@ -69,7 +79,8 @@ private:
 
 private:
     // socket 连接的哈希表
-    std::unordered_map<SocketPair, TcpConnection*, ConnHashFunc> conn_hash_;
+    // std::unordered_map<SocketPair, TcpConnection*, ConnHashFunc> conn_hash_;
+    std::unordered_map<SocketPair, Connection*, ConnHashFunc> conn_hash_;
     // 用于哈希表的安全竞争
     pthread_mutex_t conn_hash_lock_;
 };

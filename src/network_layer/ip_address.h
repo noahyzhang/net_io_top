@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef SRC_IP_ADDRESS_H_
-#define SRC_IP_ADDRESS_H_
+#ifndef SRC_NETWORK_LAYER_IP_ADDRESS_H_
+#define SRC_NETWORK_LAYER_IP_ADDRESS_H_
 
 #include <stdint.h>
 
@@ -40,4 +40,4 @@ public:
 
 }  // namespace net_io_top
 
-#endif  // SRC_IP_ADDRESS_H_
+#endif  // SRC_NETWORK_LAYER_IP_ADDRESS_H_

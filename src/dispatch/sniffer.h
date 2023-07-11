@@ -64,9 +64,9 @@ private:
      * @param p 
      * @param dlt 
      * @param pcap 
-     * @return std::shared_ptr<PacketData> 
+     * @return std::shared_ptr<IpPacketWrap> 
      */
-    PacketData* get_packet_data(const u_char* p, int dlt, const pcap_pkthdr* pcap);
+    IpPacketWrap* get_packet_data(const u_char* p, int dlt, const pcap_pkthdr* pcap);
 
     /**
      * @brief 检测数据包是否合法
@@ -75,7 +75,7 @@ private:
      * @return true 
      * @return false 
      */
-    bool check_packet_data(struct PacketData* packet);
+    // bool check_packet_data(struct IPv4Packet* packet);
 
 private:
     /**

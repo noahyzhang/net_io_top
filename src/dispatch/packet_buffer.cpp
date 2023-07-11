@@ -2,6 +2,7 @@
 #include <string.h>
 #include "common/log.h"
 #include "common/common.h"
+#include "network_layer/ipv4_packet.h"
 #include "dispatch/packet_buffer.h"
 
 namespace net_io_top {
@@ -37,7 +38,7 @@ int PacketBuffer::init(SocketConnHandler* container) {
     return 0;
 }
 
-void PacketBuffer::push_packet(struct PacketData* packet) {
+void PacketBuffer::push_packet(struct IpPacketWrap* packet) {
     if (packet == nullptr) {
         return;
     }
@@ -52,7 +53,7 @@ void PacketBuffer::push_packet(struct PacketData* packet) {
 }
 
 void PacketBuffer::maint_thread_run() {
-    struct PacketData* packet = nullptr;
+    struct IpPacketWrap* packet = nullptr;
     struct timespec ts{PACKET_TIMEOUT_S_FOR_HANDLE, 0};
     for (;;) {
         pthread_mutex_lock(&inq_lock_);
@@ -72,15 +73,48 @@ void PacketBuffer::maint_thread_run() {
             packet = nullptr;
             packet = out_queue_->front();
             out_queue_->pop();
-            if (conn_handler_ != nullptr) {
-                TcpPacket* tcp_packet = TcpPacket::new_tcp_packet(packet->p_data, packet->len);
-                TcpCapture cap(tcp_packet, packet->ts);
-                conn_handler_->process_packet(cap);
+            if (check_ip_packet(packet) == 0) {
+                IPv4Packet ipv4_packet;
+                if (ipv4_packet.init(packet->ip_data, packet->ip_data_len) == 0) {
+                    conn_handler_->process_packet(ipv4_packet);
+                }
             }
-            free(packet->p_data);
+            // if (conn_handler_ != nullptr) {
+            //     conn_handler_->process_packet(*packet);
+            //     // TcpPacket* tcp_packet = TcpPacket::new_tcp_packet(packet->p_data, packet->len);
+            //     // TcpCapture cap(tcp_packet, packet->ts);
+            //     // conn_handler_->process_packet(cap);
+            // }
+            free(packet->ip_data);
             free(packet);
         }
     }
+}
+
+int PacketBuffer::check_ip_packet(struct IpPacketWrap* packet) {
+    struct sniff_ip* ip = reinterpret_cast<struct sniff_ip*>(packet->p_data);
+    // 暂不支持 IPv6
+    if (ip->ip_v != 4) {
+        LOG(ERROR) << "just support IPv4 packet, ip_v: " << ip->ip_v;
+        return -1;
+    }
+    // 包的长度太小，都不够一个头部长度
+    unsigned int ip_header_len = ip->ip_hl * 4;
+    if (packet->len < ip_header_len + TCP_HEADER_LEN) {
+        LOG(ERROR) << "packet length is invalid, too small";
+        return -2;
+    }
+    // 包中含有的 IP 报文检测失败
+    if (ntohs(ip->ip_len) < ip_header_len + TCP_HEADER_LEN) {
+        LOG(ERROR) << "ip length is invalid, too small";
+        return -3;
+    }
+    // IP 首部长度一定是大于等于 5，IP 报头最小 20 字节
+    if (ip->ip_hl < 5) {
+        LOG(ERROR) << "ip header length is invalid, too small";
+        return -4;
+    }
+    return 0;
 }
 
 void* PacketBuffer::pb_maint_thread_func(void* arg) {

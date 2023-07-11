@@ -33,10 +33,8 @@ const uint8_t CWR = 0x80;  // 拥塞窗口减少（发送方降低它的发送�
  */
 class TcpHeader {
 public:
-    TcpHeader(const u_char* data, uint32_t data_len) {
-        // 先保留
-        (void)(data_len);
-        struct sniff_tcp* tcp = (struct sniff_tcp*)data;
+    TcpHeader(const u_char* ip_data, uint32_t ip_data_len) {
+        struct sniff_tcp* tcp = (struct sniff_tcp*)ip_data;
         // tcp header 至少 20 字节
         // 构造函数中暂不做判断，假定此 tcp 报文没有问题
         // tcp->th_off >= 5;
@@ -46,6 +44,8 @@ public:
         ack_num_ = ntohl(tcp->th_ack);
         flags_ = tcp->th_flags;
         header_len_ = tcp->th_off * 4;
+        tcp_packet_len_ = ip_data_len;
+        tcp_payload_len_ = ip_data_len - header_len_;
     }
     ~TcpHeader() = default;
     TcpHeader(const TcpHeader&) = default;
@@ -68,6 +68,8 @@ public:
     uint16_t get_src_port() const { return src_port_; }
     uint16_t get_dst_port() const { return dst_port_; }
     uint16_t get_header_len() const { return header_len_; }
+    uint64_t get_tcp_packet_len() const { return tcp_packet_len_; }
+    uint64_t get_tcp_payload_len() const { return tcp_payload_len_; }
 
 private:
     // tcp 报头顺序号
@@ -82,6 +84,10 @@ private:
     char flags_{0};
     // tcp 报头的长度（数据偏移*4）
     uint16_t header_len_{0};
+    // tcp 报文长度（包括 TCP 头部）
+    uint64_t tcp_packet_len_{0};
+    // tcp payload 长度（不包括 TCP 头部）
+    uint64_t tcp_payload_len_{0};
 };
 
 }  // namespace net_io_top
