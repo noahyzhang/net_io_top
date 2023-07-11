@@ -79,12 +79,6 @@ void PacketBuffer::maint_thread_run() {
                     conn_handler_->process_packet(ipv4_packet);
                 }
             }
-            // if (conn_handler_ != nullptr) {
-            //     conn_handler_->process_packet(*packet);
-            //     // TcpPacket* tcp_packet = TcpPacket::new_tcp_packet(packet->p_data, packet->len);
-            //     // TcpCapture cap(tcp_packet, packet->ts);
-            //     // conn_handler_->process_packet(cap);
-            // }
             free(packet->ip_data);
             free(packet);
         }

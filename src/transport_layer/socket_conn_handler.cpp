@@ -54,7 +54,7 @@ int SocketConnHandler::process_tcp_packet(const TcpPacket& tcp_packet) {
     if (iter != conn_hash_.end()) {
         Connection* conn = iter->second;
         if (conn->get_protocol() == TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_TCP) {
-            if (((TcpConnection*)conn)->accept_packet(tcp_packet)) {
+            if ((reinterpret_cast<TcpConnection*>(conn))->accept_packet(tcp_packet)) {
                 found = true;
             }
         }
@@ -69,7 +69,7 @@ int SocketConnHandler::process_tcp_packet(const TcpPacket& tcp_packet) {
             << new_conn->get_src_addr().ptr() << ":" << new_conn->get_src_port()
             << ", dst: " << new_conn->get_dst_addr().ptr() << ":" << new_conn->get_dst_port();
     }
-    // TODO(noahyzhang): 走到这里，这是一个什么包？
+    // 走到这里，说明之前没有拿到这个连接，先丢弃吧
     pthread_mutex_unlock(&conn_hash_lock_);
     return 0;
 }
@@ -88,7 +88,7 @@ bool found = false;
     if (iter != conn_hash_.end()) {
         Connection* conn = iter->second;
         if (conn->get_protocol() == TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_UDP) {
-            if (((UdpConnection*)conn)->accept_packet(udp_packet)) {
+            if ((reinterpret_cast<UdpConnection*>(conn))->accept_packet(udp_packet)) {
                 found = true;
             }
         }
@@ -101,7 +101,6 @@ bool found = false;
             << new_conn->get_src_addr().ptr() << ":" << new_conn->get_src_port()
             << ", dst: " << new_conn->get_dst_addr().ptr() << ":" << new_conn->get_dst_port();
     }
-    // TODO(noahyzhang): 走到这里，这是一个什么包？
     pthread_mutex_unlock(&conn_hash_lock_);
     return 0;
 }

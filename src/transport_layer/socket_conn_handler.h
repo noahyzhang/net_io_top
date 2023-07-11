@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef SRC_SOCKET_CONN_HANDLER_H_
-#define SRC_SOCKET_CONN_HANDLER_H_
+#ifndef SRC_TRANSPORT_LAYER_SOCKET_CONN_HANDLER_H_
+#define SRC_TRANSPORT_LAYER_SOCKET_CONN_HANDLER_H_
 
 #include <functional>
 #include <unordered_map>
@@ -87,4 +87,4 @@ private:
 
 }  // namespace net_io_top
 
-#endif  // SRC_SOCKET_CONN_HANDLER_H_
+#endif  // SRC_TRANSPORT_LAYER_SOCKET_CONN_HANDLER_H_

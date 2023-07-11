@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef SRC_SOCKET_PAIR_H_
-#define SRC_SOCKET_PAIR_H_
+#ifndef SRC_TRANSPORT_LAYER_SOCKET_PAIR_H_
+#define SRC_TRANSPORT_LAYER_SOCKET_PAIR_H_
 
 #include "network_layer/ip_address.h"
 
@@ -122,4 +122,4 @@ private:
 
 }  // namespace net_io_top
 
-#endif  // SRC_SOCKET_PAIR_H_
+#endif  // SRC_TRANSPORT_LAYER_SOCKET_PAIR_H_

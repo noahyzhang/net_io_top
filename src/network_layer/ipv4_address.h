@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef SRC_IPV4_ADDRESS_H_
-#define SRC_IPV4_ADDRESS_H_
+#ifndef SRC_NETWORK_LAYER_IPV4_ADDRESS_H_
+#define SRC_NETWORK_LAYER_IPV4_ADDRESS_H_
 
 #include <stdint.h>
 #include <netinet/in.h>
@@ -100,4 +100,4 @@ private:
 
 }  // namespace net_io_top
 
-#endif  // SRC_IPV4_ADDRESS_H_
+#endif  // SRC_NETWORK_LAYER_IPV4_ADDRESS_H_

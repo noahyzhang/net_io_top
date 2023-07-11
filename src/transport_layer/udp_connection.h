@@ -13,6 +13,7 @@
 #define SRC_TRANSPORT_LAYER_UDP_CONNECTION_H_
 
 #include <stdint.h>
+#include <utility>
 #include "transport_layer/udp_packet.h"
 #include "transport_layer/connection.h"
 
@@ -38,7 +39,7 @@ public:
 
 public:
     inline TransportLayerProtocol get_protocol() const override {
-        return TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_UDP; 
+        return TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_UDP;
     }
     inline const IPAddress& get_src_addr() const override { return *src_addr_; }
     inline const IPAddress& get_dst_addr() const override { return *dst_addr_; }

@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef SRC_LOG_H_
-#define SRC_LOG_H_
+#ifndef SRC_COMMON_LOG_H_
+#define SRC_COMMON_LOG_H_
 
 #include <iostream>
 #include <iomanip>
@@ -70,4 +70,4 @@ void init_logger(const std::string& filename);
 
 }  // namespace net_io_top
 
-#endif  // SRC_LOG_H_
+#endif  // SRC_COMMON_LOG_H_

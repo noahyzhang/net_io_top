@@ -26,6 +26,18 @@ namespace net_io_top {
 class IPv4Packet {
 public:
     IPv4Packet() = default;
+    ~IPv4Packet() {
+        if (ip_src_addr_ != nullptr) {
+            delete ip_src_addr_;
+        }
+        if (ip_dst_addr_ != nullptr) {
+            delete ip_dst_addr_;
+        }
+    }
+    IPv4Packet(const IPv4Packet&) = delete;
+    IPv4Packet& operator=(const IPv4Packet&) = delete;
+    IPv4Packet(IPv4Packet&&) = delete;
+    IPv4Packet& operator=(IPv4Packet&&) = delete;
 
 public:
     int init(u_char* ip_data, uint32_t ip_data_len) {

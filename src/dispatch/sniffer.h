@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef SRC_SNIFFER_H_
-#define SRC_SNIFFER_H_
+#ifndef SRC_DISPATCH_SNIFFER_H_
+#define SRC_DISPATCH_SNIFFER_H_
 
 #include <string>
 #include "dispatch/packet_buffer.h"
@@ -110,4 +110,4 @@ private:
 
 }  // namespace net_io_top
 
-#endif  // SRC_SNIFFER_H_
+#endif  // SRC_DISPATCH_SNIFFER_H_

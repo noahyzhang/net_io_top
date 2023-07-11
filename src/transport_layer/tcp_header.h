@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef SRC_TCP_HEADER_H_
-#define SRC_TCP_HEADER_H_
+#ifndef SRC_TRANSPORT_LAYER_TCP_HEADER_H_
+#define SRC_TRANSPORT_LAYER_TCP_HEADER_H_
 
 #include <stdint.h>
 #include <netinet/in.h>
@@ -92,4 +92,4 @@ private:
 
 }  // namespace net_io_top
 
-#endif  // SRC_TCP_HEADER_H_
+#endif  // SRC_TRANSPORT_LAYER_TCP_HEADER_H_

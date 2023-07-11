@@ -9,10 +9,11 @@
  * 
  */
 
-#ifndef SRC_TCP_CONNECTION_H_
-#define SRC_TCP_CONNECTION_H_
+#ifndef SRC_TRANSPORT_LAYER_TCP_CONNECTION_H_
+#define SRC_TRANSPORT_LAYER_TCP_CONNECTION_H_
 
 #include <list>
+#include <utility>
 #include "transport_layer/connection.h"
 #include "transport_layer/tcp_packet.h"
 
@@ -135,4 +136,4 @@ private:
 
 }  // namespace net_io_top
 
-#endif  // SRC_TCP_CONNECTION_H_
+#endif  // SRC_TRANSPORT_LAYER_TCP_CONNECTION_H_

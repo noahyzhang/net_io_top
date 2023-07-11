@@ -31,11 +31,19 @@ int Sniffer::init(PacketBuffer* packet_buffer, const std::string& interface, con
     packet_buffer_ = packet_buffer;
     // 初始化 pcap 库
     char err_buf[PCAP_ERRBUF_SIZE];
-    pcap_handler_ = pcap_open_live(interface.c_str(), SNAPLEN, 0, POL_TO_MS, err_buf);
+    // 用于打开网络设备，返回一个 pcap_t 结构的指针
+    // device 表示网卡名称
+    // snaplen 表示捕获的最大字节数，如果这个小于被捕获的数据包大小，则只显示 snaplen 位
+    // promisc 表示是否开启混杂模式
+    // to_ms 表示读取的超时时间，单位为毫秒，就是说没有必要看到一个数据包函数就返回，而是设定一个时间，这个时间内
+    //       会读取很多个数据包，然后一起返回。如果这个值为 0，会一致等待足够多的数据包到来
+    // err_buf 用于存储错误信息
+    pcap_handler_ = pcap_open_live(interface.c_str(), PCAP_SNAPLEN, 0, PCAP_POL_TO_MS, err_buf);
     if (pcap_handler_ == NULL) {
         LOG(ERROR) << "pcap_open_live failed, err: " << err_buf;
         return -1;
     }
+    // 返回链路层的类型，比如：DLT_EN10MB(以太网)
     pcap_dlt_ = pcap_datalink(pcap_handler_);
     if (pcap_dlt_ != DLT_EN10MB && pcap_dlt_ != DLT_LINUX_SLL && pcap_dlt_ != DLT_RAW && pcap_dlt_ != DLT_NULL) {
         LOG(ERROR) << "pcap_datalink get dlt is: " << pcap_dlt_ << ", not support this interface";
@@ -44,15 +52,21 @@ int Sniffer::init(PacketBuffer* packet_buffer, const std::string& interface, con
     struct bpf_program prog_filter;
     bpf_u_int32 mask = 0;
     bpf_u_int32 net = 0;
+    // 用于获取网卡的网络号和子网掩码，都是以网络字节序存放的
     if (pcap_lookupnet(interface.c_str(), &net, &mask, err_buf) == -1) {
         net = 0;
         mask = 0;
     }
+    // 用于编译一个字符串为过滤程序
+    // prog_filter 是一个指向 bpf_program 结构体的指针，由函数内部填充
+    // optimize 用于控制是否采用优化，0 表示不优化
+    // netmask 用于指定 IPv4 的网络子网掩码，这个参数仅仅在检查过滤程序中 IPv4 广播地址时才会使用
     if (pcap_compile(pcap_handler_, &prog_filter, exp.c_str(), 0, net) == -1) {
         pcap_close(pcap_handler_);
         LOG(ERROR) << "pcap_compile failed, err: " << err_buf;
         return -3;
     }
+    // 用于指定一个过滤器程序
     if (pcap_setfilter(pcap_handler_, &prog_filter) == -1) {
         pcap_freecode(&prog_filter);
         pcap_close(pcap_handler_);

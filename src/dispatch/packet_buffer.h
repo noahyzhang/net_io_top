@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef SRC_PACKET_BUFFER_H_
-#define SRC_PACKET_BUFFER_H_
+#ifndef SRC_DISPATCH_PACKET_BUFFER_H_
+#define SRC_DISPATCH_PACKET_BUFFER_H_
 
 #include <pthread.h>
 #include <queue>
@@ -84,4 +84,4 @@ private:
 
 }  // namespace net_io_top
 
-#endif  // SRC_PACKET_BUFFER_H_
+#endif  // SRC_DISPATCH_PACKET_BUFFER_H_
