@@ -6,10 +6,6 @@
 
 namespace net_io_top {
 
-Sniffer::Sniffer() {
-    pthread_mutex_init(&pb_mutex_, NULL);
-}
-
 Sniffer::~Sniffer() {
     if (pthread_initted_) {
         if (pthread_cancel(sniffer_tid_) == 0) {
@@ -19,7 +15,6 @@ Sniffer::~Sniffer() {
     if (pcap_initted_) {
         pcap_close(pcap_handler_);
     }
-    pthread_mutex_destroy(&pb_mutex_);
 }
 
 int Sniffer::init(PacketBuffer* packet_buffer, const std::string& interface, const std::string& exp) {
@@ -100,23 +95,11 @@ void Sniffer::process_packet(const pcap_pkthdr* header, const u_char* orig_packe
         LOG(ERROR) << "process_packet of packet_buffer_ is nullptr";
         return;
     }
-    // pthread_mutex_lock(&pb_mutex_);
     struct IpPacketWrap* res_packet = get_packet_data(orig_packet, pcap_dlt_, header);
     if (res_packet == nullptr) {
-        // pthread_mutex_unlock(&pb_mutex_);
         return;
     }
-    // if (!check_packet_data(res_packet)) {
-    //     if (res_packet->p_data != nullptr) {
-    //         free(res_packet->p_data);
-    //     }
-    //     free(res_packet);
-    //     // pthread_mutex_unlock(&pb_mutex_);
-    //     LOG(WARN) << "check packet data is invalid";
-    //     return;
-    // }
     packet_buffer_->push_packet(res_packet);
-    // pthread_mutex_unlock(&pb_mutex_);
     return;
 }
 
@@ -141,42 +124,46 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
     res_packet->ip_data = nullptr;
     res_packet->ts = pcap->ts;
     res_packet->ip_data_len = 0;
+    u_char* p_link = const_cast<u_char*>(p);
     // 解析链路层，DLT_EN10MB 为以太网协议
     if (dlt == DLT_EN10MB) {
         // 这个报文的长度至少要大于 链路层头部+网络层头部 的长度
         if (pcap->caplen < DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN) {
             free(res_packet);
+            LOG(ERROR) << "DLT_EN10MB pcap len is invalid, len: " << pcap->caplen;
             return nullptr;
         }
-        const struct sniff_ethernet* ethernet = (struct sniff_ethernet*)(p);
+        const struct sniff_ethernet* ethernet = reinterpret_cast<struct sniff_ethernet*>(p_link);
         // 判断是否为局域网
         bool vlan_frame = (ntohs(ethernet->ether_type) == ETHERTYPE_VLAN);
         uint16_t ether_type;
         if (vlan_frame) {
             // 需要处理链路层头部可选项 8021Q 标识的 4 字节
-            ether_type = ntohs(*((uint16_t*)(p + DLT_EN10MB_HEADER_LEN + VLAN_HEADER_LEN - 2)));
+            ether_type = ntohs(*(reinterpret_cast<uint16_t*>(p_link + DLT_EN10MB_HEADER_LEN + VLAN_HEADER_LEN - 2)));
         } else {
             ether_type = ntohs(ethernet->ether_type);
         }
-        if (ether_type == ETHERTYPE_IP || ether_type == ETHERTYPE_IPV6) {
+        if (ether_type == ETHERTYPE_IP) {
             res_packet->ip_data_len = pcap->caplen - DLT_EN10MB_HEADER_LEN - (vlan_frame ? VLAN_HEADER_LEN : 0);
             res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char) * res_packet->ip_data_len));
             memcpy(reinterpret_cast<void*>(res_packet->ip_data),
-                (void*)(p + DLT_EN10MB_HEADER_LEN + (vlan_frame ? VLAN_HEADER_LEN : 0)),
+                reinterpret_cast<void*>(p_link + DLT_EN10MB_HEADER_LEN + (vlan_frame ? VLAN_HEADER_LEN : 0)),
                 res_packet->ip_data_len);
         } else {
             free(res_packet);
+            LOG(ERROR) << "DLT_EN10MB just support ETHERTYPE_IP protocol, ether_type: " << ether_type;
             return nullptr;
         }
     } else if (dlt == DLT_LINUX_SLL) {  // Linux socket 类型
         if (pcap->caplen < DLT_LINUX_SLL_HEADER_LEN + IP_HEADER_LEN) {
             free(res_packet);
+            LOG(ERROR) << "DLT_LINUX_SLL pcap len is invalid, len: " << pcap->caplen;
             return nullptr;
         }
         res_packet->ip_data_len = pcap->caplen - DLT_LINUX_SLL_HEADER_LEN;
         res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->ip_data_len));
         memcpy(reinterpret_cast<void*>(res_packet->ip_data),
-            (void*)(p + DLT_LINUX_SLL_HEADER_LEN), res_packet->ip_data_len);
+            reinterpret_cast<void*>(p_link + DLT_LINUX_SLL_HEADER_LEN), res_packet->ip_data_len);
     } else if (dlt == DLT_RAW || dlt == DLT_NULL) {
         // DLT_RAW 是一种简单的数据链路类型，它表示数据包的头部没有任何特定的格式或协议结构。
         // 在 DLT_RAW 中，数据包头部直接包含了网络层及以上协议的数据。
@@ -185,55 +172,14 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
         // 这种类型的数据链路通常用于本地通信、回环接口（loopback interface）或隧道协议，其中链路层头部是不必要的
         if (pcap->caplen < IP_HEADER_LEN) {
             free(res_packet);
+            LOG(ERROR) << "dlt: " << dlt << ", pcap len is invalid, len: " << pcap->caplen;
             return nullptr;
         }
         res_packet->ip_data_len = pcap->caplen;
         res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->ip_data_len));
-        memcpy(reinterpret_cast<void*>(res_packet->ip_data), (void*)(p), res_packet->ip_data_len);
+        memcpy(reinterpret_cast<void*>(res_packet->ip_data), reinterpret_cast<void*>(p_link), res_packet->ip_data_len);
     }
     return res_packet;
 }
-
-// bool Sniffer::check_packet_data(struct IPv4Packet* packet) {
-//     struct sniff_ip* ip = reinterpret_cast<struct sniff_ip*>(packet->p_data);
-//     // 暂不支持 IPv6
-//     if (ip->ip_v != 4) {
-//         LOG(ERROR) << "just support IPv4 packet, ip_v: " << ip->ip_v;
-//         return false;
-//     }
-//     // 包的长度太小，都不够一个头部长度
-//     unsigned int ip_header_len = ip->ip_hl * 4;
-//     if (packet->len < ip_header_len + TCP_HEADER_LEN) {
-//         LOG(ERROR) << "packet length is invalid, too small";
-//         return false;
-//     }
-//     // 包中含有的 IP 报文检测失败
-//     if (ntohs(ip->ip_len) < ip_header_len + TCP_HEADER_LEN) {
-//         LOG(ERROR) << "ip length is invalid, too small";
-//         return false;
-//     }
-//     // IP 首部长度一定是大于等于 5，IP 报头最小 20 字节
-//     if (ip->ip_hl < 5) {
-//         LOG(ERROR) << "ip header length is invalid, too small";
-//         return false;
-//     }
-//     // 目前仅处理 TCP 报文
-//     if (ip->ip_p != IPPROTO_TCP) {
-//         LOG(WARN) << "just support TCP packet, ip_p: " << (int)ip->ip_p;
-//         return false;
-//     }
-//     // TCP 报头至少 20 字节
-//     struct sniff_tcp* tcp = (struct sniff_tcp*)(packet->p_data + ip_header_len);
-//     if (tcp->th_off < 5) {
-//         LOG(WARN) << "tcp header length is invalid, too small";
-//         return false;
-//     }
-//     // tcp 端口号错误
-//     if (tcp->th_sport == 0 || tcp->th_dport == 0) {
-//         LOG(WARN) << "tcp port number is invalid, sport: " << tcp->th_sport << ", dport: " << tcp->th_dport;
-//         return false;
-//     }
-//     return true;
-// }
 
 }  // namespace net_io_top

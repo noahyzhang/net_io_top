@@ -26,7 +26,7 @@ namespace net_io_top {
  */
 class Sniffer {
 public:
-    Sniffer();
+    Sniffer() = default;
     ~Sniffer();
     Sniffer(const Sniffer&) = delete;
     Sniffer& operator=(const Sniffer&) = delete;
@@ -100,8 +100,6 @@ private:
     int pcap_dlt_{0};
     // 存储数据包的缓冲区
     PacketBuffer* packet_buffer_{nullptr};
-    // 同步的处理数据包
-    pthread_mutex_t pb_mutex_;
     // pcap 库是否已经初始化
     bool pcap_initted_{false};
     // 线程是否初始化

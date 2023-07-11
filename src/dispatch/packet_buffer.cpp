@@ -54,11 +54,9 @@ void PacketBuffer::push_packet(struct IpPacketWrap* packet) {
 
 void PacketBuffer::maint_thread_run() {
     struct IpPacketWrap* packet = nullptr;
-    // struct timespec ts{PACKET_TIMEOUT_S_FOR_HANDLE, 0};
     for (;;) {
         pthread_mutex_lock(&inq_lock_);
         while (in_queue_->empty()) {
-            // pthread_cond_timedwait(&inq_flag_, &inq_lock_, &ts);
             pthread_cond_wait(&inq_flag_, &inq_lock_);
         }
         if (in_queue_ == &queue1_) {
