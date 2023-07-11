@@ -124,9 +124,9 @@ void* Sniffer::sniffer_thread_func(void* arg) {
 
 IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkthdr* pcap) {
     struct IpPacketWrap* res_packet = reinterpret_cast<IpPacketWrap*>(malloc(sizeof(struct IpPacketWrap)));
-    res_packet->p_data = nullptr;
+    res_packet->ip_data = nullptr;
     res_packet->ts = pcap->ts;
-    res_packet->len = 0;
+    res_packet->ip_data_len = 0;
     // 解析链路层，DLT_EN10MB 为以太网协议
     if (dlt == DLT_EN10MB) {
         // 这个报文的长度至少要大于 链路层头部+网络层头部 的长度
@@ -145,11 +145,11 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
             ether_type = ntohs(ethernet->ether_type);
         }
         if (ether_type == ETHERTYPE_IP || ether_type == ETHERTYPE_IPV6) {
-            res_packet->len = pcap->caplen - DLT_EN10MB_HEADER_LEN - (vlan_frame ? VLAN_HEADER_LEN : 0);
-            res_packet->p_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char) * res_packet->len));
-            memcpy(reinterpret_cast<void*>(res_packet->p_data),
+            res_packet->ip_data_len = pcap->caplen - DLT_EN10MB_HEADER_LEN - (vlan_frame ? VLAN_HEADER_LEN : 0);
+            res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char) * res_packet->ip_data_len));
+            memcpy(reinterpret_cast<void*>(res_packet->ip_data),
                 (void*)(p + DLT_EN10MB_HEADER_LEN + (vlan_frame ? VLAN_HEADER_LEN : 0)),
-                res_packet->len);
+                res_packet->ip_data_len);
         } else {
             free(res_packet);
             return nullptr;
@@ -159,10 +159,10 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
             free(res_packet);
             return nullptr;
         }
-        res_packet->len = pcap->caplen - DLT_LINUX_SLL_HEADER_LEN;
-        res_packet->p_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->len));
-        memcpy(reinterpret_cast<void*>(res_packet->p_data),
-            (void*)(p + DLT_LINUX_SLL_HEADER_LEN), res_packet->len);
+        res_packet->ip_data_len = pcap->caplen - DLT_LINUX_SLL_HEADER_LEN;
+        res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->ip_data_len));
+        memcpy(reinterpret_cast<void*>(res_packet->ip_data),
+            (void*)(p + DLT_LINUX_SLL_HEADER_LEN), res_packet->ip_data_len);
     } else if (dlt == DLT_RAW || dlt == DLT_NULL) {
         // DLT_RAW 是一种简单的数据链路类型，它表示数据包的头部没有任何特定的格式或协议结构。
         // 在 DLT_RAW 中，数据包头部直接包含了网络层及以上协议的数据。
@@ -173,9 +173,9 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
             free(res_packet);
             return nullptr;
         }
-        res_packet->len = pcap->caplen;
-        res_packet->p_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->len));
-        memcpy(reinterpret_cast<void*>(res_packet->p_data), (void*)(p), res_packet->len);
+        res_packet->ip_data_len = pcap->caplen;
+        res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->ip_data_len));
+        memcpy(reinterpret_cast<void*>(res_packet->ip_data), (void*)(p), res_packet->ip_data_len);
     }
     return res_packet;
 }

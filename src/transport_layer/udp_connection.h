@@ -25,8 +25,11 @@ public:
         dst_addr_ = udp_packet.get_dst_addr().clone();
         src_port_ = udp_packet.get_src_port();
         dst_port_ = udp_packet.get_dst_port();
+        all_packet_count_ = 1;
+        all_packet_bytes_ = udp_packet.get_udp_header().get_udp_packet_len();
         forward_packet_count_ = 1;
-        forward_packet_bytes_ = udp_packet.get_udp_header().get_packet_len();
+        forward_packet_bytes_ = udp_packet.get_udp_header().get_udp_packet_len();
+        last_period_packet_tm_s_ = time(NULL);
     }
     ~UdpConnection() {
         delete src_addr_;
@@ -41,6 +44,9 @@ public:
     inline const IPAddress& get_dst_addr() const override { return *dst_addr_; }
     inline uint16_t get_src_port() const override { return src_port_; }
     inline uint16_t get_dst_port() const override { return dst_port_; }
+
+    inline uint64_t get_all_packet_count() const override { return all_packet_count_; }
+    inline uint64_t get_all_packet_bytes() const override { return all_packet_bytes_; }
 
     inline uint64_t get_forward_packet_count() const override { return forward_packet_count_; }
     inline uint64_t get_forward_packet_bytes() const override { return forward_packet_bytes_; }
@@ -69,24 +75,29 @@ public:
         return val;
     }
 
+    time_t get_idle_time_s() const override { return time(NULL) - last_period_packet_tm_s_; }
+
 public:
     int accept_packet(const UdpPacket& udp_packet) {
         if ((udp_packet.get_src_addr() == *src_addr_ && udp_packet.get_src_port() == src_port_)
             && (udp_packet.get_dst_addr() == *dst_addr_ && udp_packet.get_dst_port() == dst_port_)) {
             forward_packet_count_ += 1;
-            forward_packet_bytes_ += udp_packet.get_udp_header().get_packet_len();
+            forward_packet_bytes_ += udp_packet.get_udp_header().get_udp_packet_len();
             cur_period_forward_packet_count_ += 1;
-            cur_period_forward_packet_bytes_ += udp_packet.get_udp_header().get_packet_len();
+            cur_period_forward_packet_bytes_ += udp_packet.get_udp_header().get_udp_packet_len();
 
         } else if ((udp_packet.get_src_addr() == *dst_addr_ && udp_packet.get_src_port() == dst_port_)
             && (udp_packet.get_dst_addr() == *src_addr_ && udp_packet.get_dst_port() == src_port_)) {
             backward_packet_count_ += 1;
-            backward_packet_bytes_ += udp_packet.get_udp_header().get_packet_len();
+            backward_packet_bytes_ += udp_packet.get_udp_header().get_udp_packet_len();
             cur_period_backward_packet_count_ += 1;
-            cur_period_backward_packet_bytes_ += udp_packet.get_udp_header().get_packet_len();
+            cur_period_backward_packet_bytes_ += udp_packet.get_udp_header().get_udp_packet_len();
         } else {
             return -1;
         }
+        all_packet_count_ += 1;
+        all_packet_bytes_ += udp_packet.get_udp_header().get_udp_packet_len();
+        last_period_packet_tm_s_ = time(NULL);
         return 0;
     }
 
@@ -95,6 +106,9 @@ private:
     IPAddress* dst_addr_{nullptr};
     uint16_t src_port_{0};
     uint16_t dst_port_{0};
+
+    uint64_t all_packet_count_{0};
+    uint64_t all_packet_bytes_{0};
 
     uint64_t forward_packet_count_{0};
     uint64_t forward_packet_bytes_{0};
@@ -105,6 +119,8 @@ private:
     uint64_t backward_packet_bytes_{0};
     uint64_t cur_period_backward_packet_count_{0};
     uint64_t cur_period_backward_packet_bytes_{0};
+
+    time_t last_period_packet_tm_s_{0};
 };
 
 }  // namespace net_io_top

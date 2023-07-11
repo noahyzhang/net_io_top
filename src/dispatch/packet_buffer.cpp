@@ -92,7 +92,7 @@ void PacketBuffer::maint_thread_run() {
 }
 
 int PacketBuffer::check_ip_packet(struct IpPacketWrap* packet) {
-    struct sniff_ip* ip = reinterpret_cast<struct sniff_ip*>(packet->p_data);
+    struct sniff_ip* ip = reinterpret_cast<struct sniff_ip*>(packet->ip_data);
     // 暂不支持 IPv6
     if (ip->ip_v != 4) {
         LOG(ERROR) << "just support IPv4 packet, ip_v: " << ip->ip_v;
@@ -100,7 +100,7 @@ int PacketBuffer::check_ip_packet(struct IpPacketWrap* packet) {
     }
     // 包的长度太小，都不够一个头部长度
     unsigned int ip_header_len = ip->ip_hl * 4;
-    if (packet->len < ip_header_len + TCP_HEADER_LEN) {
+    if (packet->ip_data_len < ip_header_len + TCP_HEADER_LEN) {
         LOG(ERROR) << "packet length is invalid, too small";
         return -2;
     }

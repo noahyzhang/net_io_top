@@ -17,10 +17,10 @@
 #include <vector>
 #include "transport_layer/tcp_connection.h"
 #include "transport_layer/udp_connection.h"
-#include "transport_layer/tcp_capture.h"
 #include "transport_layer/connection.h"
 #include "transport_layer/tcp_packet.h"
 #include "transport_layer/udp_packet.h"
+#include "network_layer/ipv4_packet.h"
 
 namespace net_io_top {
 
@@ -61,9 +61,9 @@ public:
     /**
      * @brief 获取已经排序的的 socket 连接信息
      * 
-     * @return std::vector<TcpConnection*> 
+     * @return std::vector<Connection*> 
      */
-    std::vector<TcpConnection*> get_sorted_conns();
+    std::vector<Connection*> get_sorted_conns();
 
 private:
     int process_tcp_packet(const TcpPacket& tcp_packet);

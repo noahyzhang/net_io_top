@@ -13,6 +13,8 @@
 #define SRC_TRANSPORT_LAYER_CONNECTION_H_
 
 #include <stdint.h>
+#include "network_layer/ip_address.h"
+#include "common/common.h"
 
 namespace net_io_top {
 
@@ -36,6 +38,9 @@ public:
     virtual uint16_t get_src_port() const = 0;
     virtual uint16_t get_dst_port() const = 0;
 
+    virtual uint64_t get_all_packet_count() const = 0;
+    virtual uint64_t get_all_packet_bytes() const = 0;
+
     virtual uint64_t get_forward_packet_count() const = 0;
     virtual uint64_t get_forward_packet_bytes() const = 0;
     virtual uint64_t get_backward_packet_count() const = 0;
@@ -50,6 +55,8 @@ public:
     virtual uint64_t exchange_cur_period_forward_packet_bytes(uint64_t val) = 0;
     virtual uint64_t exchange_cur_period_backward_packet_count(uint64_t val) = 0;
     virtual uint64_t exchange_cur_period_backward_packet_bytes(uint64_t val) = 0;
+
+    virtual time_t get_idle_time_s() const = 0;
 };
 
 }  // namespace net_io_top

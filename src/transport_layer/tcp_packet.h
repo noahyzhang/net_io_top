@@ -17,7 +17,6 @@
 #include "network_layer/ip_address.h"
 #include "network_layer/ipv4_address.h"
 #include "transport_layer/socket_pair.h"
-#include "transport_layer/transport_packet.h"
 
 namespace net_io_top {
 
@@ -47,6 +46,11 @@ public:
         // socket_pair_ = new SocketPair(
         //     *ip_src_addr_, tcp_header_->get_src_port(),
         //     *ip_dst_addr_, tcp_header_->get_dst_port());
+    }
+
+    ~TcpPacket() {
+        delete ip_src_addr_;
+        delete ip_dst_addr_;
     }
 
     // TcpPacket(const TcpPacket& other) {
@@ -93,14 +97,6 @@ public:
     //     tcp_header_ = nullptr;
     //     socket_pair_ = nullptr;
     //     return *this;
-    // }
-
-    // ~TcpPacket() {
-    //     total_len_ = ip_header_len_ = 0;
-    //     delete ip_src_addr_;
-    //     delete ip_dst_addr_;
-    //     delete tcp_header_;
-    //     delete socket_pair_;
     // }
 
 public:

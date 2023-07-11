@@ -6,7 +6,6 @@
 #include "common/config.h"
 #include "network_layer/ipv4_packet.h"
 #include "common/log.h"
-#include "transport_layer/transport_packet.h"
 #include "transport_layer/socket_conn_handler.h"
 
 namespace net_io_top {
@@ -17,7 +16,7 @@ SocketConnHandler::SocketConnHandler() {
 
 SocketConnHandler::~SocketConnHandler() {
     for (auto it = conn_hash_.begin(); it != conn_hash_.end(); ++it) {
-        TcpConnection* rm = (*it).second;
+        Connection* rm = (*it).second;
         delete rm;
     }
     conn_hash_.clear();
@@ -107,8 +106,8 @@ bool found = false;
     return 0;
 }
 
-std::vector<TcpConnection*> SocketConnHandler::get_sorted_conns() {
-    std::vector<TcpConnection*> sorted_conns;
+std::vector<Connection*> SocketConnHandler::get_sorted_conns() {
+    std::vector<Connection*> sorted_conns;
     // 在锁内，先移除过期的连接，然后放入数组容器中
     pthread_mutex_lock(&conn_hash_lock_);
     remove_overdue_conn();
@@ -118,8 +117,8 @@ std::vector<TcpConnection*> SocketConnHandler::get_sorted_conns() {
     pthread_mutex_unlock(&conn_hash_lock_);
     // 排序
     std::sort(sorted_conns.begin(), sorted_conns.end(),
-        [](TcpConnection* c1, TcpConnection* c2) ->bool {
-        if (c1->get_all_tcp_payload_bytes() > c2->get_all_tcp_payload_bytes()) {
+        [](Connection* c1, Connection* c2) ->bool {
+        if (c1->get_all_packet_bytes() > c2->get_all_packet_bytes()) {
             return false;
         } else {
             return true;
@@ -130,18 +129,24 @@ std::vector<TcpConnection*> SocketConnHandler::get_sorted_conns() {
 
 void SocketConnHandler::remove_overdue_conn() {
     for (auto it = conn_hash_.begin(); it != conn_hash_.end();) {
-        TcpConnection* t_conn = (*it).second;
-        t_conn->re_calc_avg();
+        Connection* conn = (*it).second;
+        // t_conn->re_calc_avg();
         // 删除已经关闭的、或过期的连接
-        if ((t_conn->is_finished()
-            && t_conn->get_idle_seconds() > Config::get_instance().get_conn_closed_timeout_s())
-            || (t_conn->get_state() == TCP_STATE_SYN_SYNACK && t_conn->get_idle_seconds() > SYN_SYNACK_WAIT)
-            || (t_conn->get_state() == TCP_STATE_FIN_FINACK && t_conn->get_idle_seconds() > FIN_FINACK_WAIT)) {
-            delete t_conn;
+        if (conn->get_idle_time_s() > Config::get_instance().get_conn_closed_timeout_s()) {
+            delete conn;
             it = conn_hash_.erase(it);
         } else {
             it++;
         }
+        // if ((t_conn->is_finished()
+        //     && t_conn->get_idle_seconds() > Config::get_instance().get_conn_closed_timeout_s())
+        //     || (t_conn->get_state() == TCP_STATE_SYN_SYNACK && t_conn->get_idle_seconds() > SYN_SYNACK_WAIT)
+        //     || (t_conn->get_state() == TCP_STATE_FIN_FINACK && t_conn->get_idle_seconds() > FIN_FINACK_WAIT)) {
+        //     delete t_conn;
+        //     it = conn_hash_.erase(it);
+        // } else {
+        //     it++;
+        // }
     }
 }
 
