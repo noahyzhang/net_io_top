@@ -19,6 +19,14 @@
 namespace net_io_top {
 
 /**
+ * 注意，连接类(Connection) 由 TcpConnect、UdpConnect 继承
+ * 实现多态，支持多种不同的协议
+ * 但当前的代码我们会发现 TcpConnect、UdpConnect 的实现重复性很强
+ * 解释下原因：我们后面要对连接失效，待删除的情况进行区分，而不同协议的场景不同
+ * 因此当前从架构上来说，是可以理解的，此时 架构可扩展性+代码优雅性 > 性能
+ */
+
+/**
  * @brief 连接类
  * 作为基类，可以由 TCP、UDP 等类继承
  */
@@ -46,17 +54,9 @@ public:
     virtual uint64_t get_backward_packet_count() const = 0;
     virtual uint64_t get_backward_packet_bytes() const = 0;
 
-    virtual uint64_t get_cur_period_forward_packet_count() const = 0;
-    virtual uint64_t get_cur_period_forward_packet_bytes() const = 0;
-    virtual uint64_t get_cur_period_backward_packet_count() const = 0;
-    virtual uint64_t get_cur_period_backward_packet_bytes() const = 0;
-
-    virtual uint64_t exchange_cur_period_forward_packet_count(uint64_t val) = 0;
-    virtual uint64_t exchange_cur_period_forward_packet_bytes(uint64_t val) = 0;
-    virtual uint64_t exchange_cur_period_backward_packet_count(uint64_t val) = 0;
-    virtual uint64_t exchange_cur_period_backward_packet_bytes(uint64_t val) = 0;
-
     virtual time_t get_idle_time_s() const = 0;
+
+    virtual void re_calc_period_value() = 0;
 };
 
 }  // namespace net_io_top

@@ -27,6 +27,8 @@ enum LogLevel {
     ERROR,
 };
 
+void init_logger(const std::string& filename);
+void set_log_level(LogLevel log_level);
 std::string get_log_level_str(LogLevel log_level);
 
 class Logger {
@@ -58,13 +60,12 @@ public:
 
 private:
     friend void init_logger(const std::string& filename);
+    friend void set_log_level(LogLevel log_level);
 
 private:
-    LogLevel log_level_;
+    static LogLevel log_level_;
     static std::ofstream file_;
 };
-
-void init_logger(const std::string& filename);
 
 #define LOG(log_level) Logger().start(log_level, __FILE__, __FUNCTION__, __LINE__)
 

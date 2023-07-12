@@ -3,6 +3,15 @@
 namespace net_io_top {
 
 std::ofstream Logger::file_;
+LogLevel Logger::log_level_ = LogLevel::DEBUG;
+
+void init_logger(const std::string& filename) {
+    Logger::file_.open(filename, std::ofstream::app);
+}
+
+void set_log_level(LogLevel log_level) {
+    Logger::log_level_ = log_level;
+}
 
 std::string get_log_level_str(LogLevel log_level) {
     switch (log_level) {
@@ -16,10 +25,6 @@ std::string get_log_level_str(LogLevel log_level) {
         return "ERROR";
     }
     return "INVALID_LOG_LEVEL";
-}
-
-void init_logger(const std::string& filename) {
-    Logger::file_.open(filename, std::ofstream::app);
 }
 
 }  // namespace net_io_top

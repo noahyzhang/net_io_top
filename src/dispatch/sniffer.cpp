@@ -90,13 +90,14 @@ void Sniffer::collect_packet() {
 }
 
 void Sniffer::process_packet(const pcap_pkthdr* header, const u_char* orig_packet) {
-    // LOG(DEBUG) << "pcap get packet, header len: " << header->len;
+    LOG(DEBUG) << "pcap get packet, packet len: " << header->len;
     if (packet_buffer_ == nullptr) {
         LOG(ERROR) << "process_packet of packet_buffer_ is nullptr";
         return;
     }
     struct IpPacketWrap* res_packet = get_packet_data(orig_packet, pcap_dlt_, header);
     if (res_packet == nullptr) {
+        LOG(ERROR) << "get_packet_data failed";
         return;
     }
     packet_buffer_->push_packet(res_packet);
@@ -128,9 +129,9 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
     // 解析链路层，DLT_EN10MB 为以太网协议
     if (dlt == DLT_EN10MB) {
         // 这个报文的长度至少要大于 链路层头部+网络层头部 的长度
-        if (pcap->caplen < DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN) {
+        if (pcap->len < DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN) {
             free(res_packet);
-            LOG(ERROR) << "DLT_EN10MB pcap len is invalid, len: " << pcap->caplen;
+            LOG(ERROR) << "DLT_EN10MB pcap len is invalid, len: " << pcap->len;
             return nullptr;
         }
         const struct sniff_ethernet* ethernet = reinterpret_cast<struct sniff_ethernet*>(p_link);
@@ -144,7 +145,7 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
             ether_type = ntohs(ethernet->ether_type);
         }
         if (ether_type == ETHERTYPE_IP) {
-            res_packet->ip_data_len = pcap->caplen - DLT_EN10MB_HEADER_LEN - (vlan_frame ? VLAN_HEADER_LEN : 0);
+            res_packet->ip_data_len = pcap->len - DLT_EN10MB_HEADER_LEN - (vlan_frame ? VLAN_HEADER_LEN : 0);
             res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char) * res_packet->ip_data_len));
             memcpy(reinterpret_cast<void*>(res_packet->ip_data),
                 reinterpret_cast<void*>(p_link + DLT_EN10MB_HEADER_LEN + (vlan_frame ? VLAN_HEADER_LEN : 0)),
@@ -155,12 +156,12 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
             return nullptr;
         }
     } else if (dlt == DLT_LINUX_SLL) {  // Linux socket 类型
-        if (pcap->caplen < DLT_LINUX_SLL_HEADER_LEN + IP_HEADER_LEN) {
+        if (pcap->len < DLT_LINUX_SLL_HEADER_LEN + IP_HEADER_LEN) {
             free(res_packet);
-            LOG(ERROR) << "DLT_LINUX_SLL pcap len is invalid, len: " << pcap->caplen;
+            LOG(ERROR) << "DLT_LINUX_SLL pcap len is invalid, len: " << pcap->len;
             return nullptr;
         }
-        res_packet->ip_data_len = pcap->caplen - DLT_LINUX_SLL_HEADER_LEN;
+        res_packet->ip_data_len = pcap->len - DLT_LINUX_SLL_HEADER_LEN;
         res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->ip_data_len));
         memcpy(reinterpret_cast<void*>(res_packet->ip_data),
             reinterpret_cast<void*>(p_link + DLT_LINUX_SLL_HEADER_LEN), res_packet->ip_data_len);
@@ -170,12 +171,12 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
         // 这种类型的数据链路通常用于原始数据包捕获或发送，允许以原始的、未经修改的形式处理数据包。
         // DLT_NULL 它表示数据包没有数据链路层头部，仅包含网络层及以上的数据
         // 这种类型的数据链路通常用于本地通信、回环接口（loopback interface）或隧道协议，其中链路层头部是不必要的
-        if (pcap->caplen < IP_HEADER_LEN) {
+        if (pcap->len < IP_HEADER_LEN) {
             free(res_packet);
-            LOG(ERROR) << "dlt: " << dlt << ", pcap len is invalid, len: " << pcap->caplen;
+            LOG(ERROR) << "dlt: " << dlt << ", pcap len is invalid, len: " << pcap->len;
             return nullptr;
         }
-        res_packet->ip_data_len = pcap->caplen;
+        res_packet->ip_data_len = pcap->len;
         res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->ip_data_len));
         memcpy(reinterpret_cast<void*>(res_packet->ip_data), reinterpret_cast<void*>(p_link), res_packet->ip_data_len);
     }

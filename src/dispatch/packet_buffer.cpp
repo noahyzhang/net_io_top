@@ -40,14 +40,16 @@ int PacketBuffer::init(SocketConnHandler* container) {
 
 void PacketBuffer::push_packet(struct IpPacketWrap* packet) {
     if (packet == nullptr) {
+        LOG(ERROR) << "push_packet failed, packet is null";
         return;
     }
     pthread_mutex_lock(&inq_lock_);
     in_queue_->push(packet);
-    if (++packet_count_ > PACKET_MAX_COUNT_FOR_HANDLE) {
-        packet_count_ = 0;
-        pthread_cond_signal(&inq_flag_);
-    }
+    // LOG(DEBUG) << "push_packet success, packet size: " << packet->ip_data_len;
+    // if (++packet_count_ > PACKET_MAX_COUNT_FOR_HANDLE) {
+    //     packet_count_ = 0;
+    //     pthread_cond_signal(&inq_flag_);
+    // }
     pthread_mutex_unlock(&inq_lock_);
     return;
 }
@@ -56,9 +58,9 @@ void PacketBuffer::maint_thread_run() {
     struct IpPacketWrap* packet = nullptr;
     for (;;) {
         pthread_mutex_lock(&inq_lock_);
-        while (in_queue_->empty()) {
-            pthread_cond_wait(&inq_flag_, &inq_lock_);
-        }
+        // while (in_queue_->empty()) {
+        //     pthread_cond_wait(&inq_flag_, &inq_lock_);
+        // }
         if (in_queue_ == &queue1_) {
             in_queue_ = &queue2_;
             out_queue_ = &queue1_;
@@ -75,7 +77,9 @@ void PacketBuffer::maint_thread_run() {
             if (check_ip_packet(packet) == 0) {
                 IPv4Packet ipv4_packet;
                 if (ipv4_packet.init(packet->ip_data, packet->ip_data_len) == 0) {
-                    conn_handler_->process_packet(ipv4_packet);
+                    if (conn_handler_->process_packet(ipv4_packet) < 0) {
+                        LOG(ERROR) << "conn_handler_->process_packet failed";
+                    }
                 }
             }
             free(packet->ip_data);

@@ -26,9 +26,6 @@ namespace net_io_top {
 // 链路层(14字节)、网络层(20字节)、传输层(20字节)，设置 100 字节够了
 #define PCAP_SNAPLEN 100
 
-// #define SYN_SYNACK_WAIT 30
-// #define FIN_FINACK_WAIT 60
-
 /**
  * @brief IP 报头封装
  * 

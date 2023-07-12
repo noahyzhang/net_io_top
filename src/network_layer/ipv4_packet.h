@@ -16,6 +16,7 @@
 #include <netinet/in.h>
 #include "common/headers.h"
 #include "network_layer/ipv4_address.h"
+#include "common/log.h"
 
 namespace net_io_top {
 
@@ -41,8 +42,10 @@ public:
 
 public:
     int init(u_char* ip_data, uint32_t ip_data_len) {
+        (void)ip_data_len;
         struct sniff_ip* ip = (struct sniff_ip*)(ip_data);
         if (ip->ip_v != 4) {
+            LOG(ERROR) << "IPv4Packet init failed, just support IPv4, cur protocol: " << ip->ip_v;
             return -1;
         }
         ip_src_addr_ = new IPv4Address(ip->ip_src);
@@ -50,7 +53,8 @@ public:
         ip_header_len_ = ip->ip_hl * 4;
         ip_protocol_ = ip->ip_p;
         ip_body_ = ip_data + ip_header_len_;
-        ip_body_len_ = ip_data_len - ip_header_len_;
+        // 注意大小端，网络字节序转换为主机字节序
+        ip_body_len_ = ntohs(ip->ip_len) - ip_header_len_;
         return 0;
     }
 

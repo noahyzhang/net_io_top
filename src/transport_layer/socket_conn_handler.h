@@ -35,6 +35,13 @@ public:
     }
 };
 
+class ConnEqualFunc {
+public:
+    bool operator()(const SocketPair& sp1, const SocketPair& sp2) const {
+        return sp1 == sp2;
+    }
+};
+
 /**
  * @brief socket 连接的处理
  * 
@@ -55,7 +62,6 @@ public:
      * @param t_cap 
      * @return int 
      */
-    // int process_packet(const TcpCapture& t_cap);
     int process_packet(const IPv4Packet& ip_packet);
 
     /**
@@ -79,8 +85,7 @@ private:
 
 private:
     // socket 连接的哈希表
-    // std::unordered_map<SocketPair, TcpConnection*, ConnHashFunc> conn_hash_;
-    std::unordered_map<SocketPair, Connection*, ConnHashFunc> conn_hash_;
+    std::unordered_map<SocketPair, Connection*, ConnHashFunc, ConnEqualFunc> conn_hash_;
     // 用于哈希表的安全竞争
     pthread_mutex_t conn_hash_lock_;
 };
