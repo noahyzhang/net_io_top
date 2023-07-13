@@ -97,7 +97,7 @@ public:
             return false;
         }
     }
-    bool operator!=(const SocketPair& other) const { !(other == *this); }
+    bool operator!=(const SocketPair& other) const { return !(other == *this); }
     inline TransportLayerProtocol get_protocol() const { return protocol_; }
     inline const IPAddress& get_addrA() const { return *p_ip_addrA_; }
     inline const IPAddress& get_addrB() const { return *p_ip_addrB_; }

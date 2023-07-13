@@ -28,7 +28,7 @@ public:
         src_port_ = udp_packet.get_src_port();
         dst_port_ = udp_packet.get_dst_port();
         all_packet_count_ = 1;
-        all_packet_bytes_ = udp_packet.get_udp_header().get_udp_packet_len();
+        all_packet_bytes_ = udp_packet.get_udp_header().get_udp_packet_len()
             + DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN;
         cur_period_forward_packet_count_ = 1;
         cur_period_forward_packet_bytes_ = udp_packet.get_udp_header().get_udp_packet_len()

@@ -63,7 +63,7 @@ public:
     inline const IPv4Address& get_ip_src_addr() const { return *ip_src_addr_; }
     inline const IPv4Address& get_ip_dst_addr() const { return *ip_dst_addr_; }
     inline const u_char* get_ip_body() const { return ip_body_; }
-    inline const uint32_t get_ip_body_len() const { return ip_body_len_; }
+    inline uint32_t get_ip_body_len() const { return ip_body_len_; }
 
 private:
     IPv4Address* ip_src_addr_{nullptr};

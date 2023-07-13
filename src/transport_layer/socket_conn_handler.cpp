@@ -136,7 +136,8 @@ void SocketConnHandler::remove_overdue_conn() {
     for (auto it = conn_hash_.begin(); it != conn_hash_.end();) {
         Connection* conn = (*it).second;
         // 删除已经关闭的、或过期的连接
-        if (conn->get_idle_time_s() > Config::get_instance().get_conn_closed_timeout_s()) {
+        if (static_cast<uint64_t>(conn->get_idle_time_s())
+            > Config::get_instance().get_conn_closed_timeout_s()) {
             delete conn;
             it = conn_hash_.erase(it);
         } else {
