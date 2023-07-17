@@ -67,9 +67,9 @@ public:
     /**
      * @brief 获取已经排序的的 socket 连接信息
      * 
-     * @return std::vector<Connection*> 
+     * @return std::vector<ConnectionInfo> 
      */
-    std::vector<Connection*> get_sorted_conns();
+    std::vector<ConnectionInfo> get_sorted_conns();
 
 private:
     int process_tcp_packet(const TcpPacket& tcp_packet);

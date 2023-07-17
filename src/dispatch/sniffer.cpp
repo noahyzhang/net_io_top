@@ -1,5 +1,6 @@
 #include <string.h>
 #include <errno.h>
+#include <algorithm>
 #include "common/common.h"
 #include "common/log.h"
 #include "dispatch/sniffer.h"
@@ -90,7 +91,7 @@ void Sniffer::collect_packet() {
 }
 
 void Sniffer::process_packet(const pcap_pkthdr* header, const u_char* orig_packet) {
-    LOG(DEBUG) << "pcap get packet, packet len: " << header->len;
+    // LOG(DEBUG) << "pcap get packet, packet len: " << header->len;
     if (packet_buffer_ == nullptr) {
         LOG(ERROR) << "process_packet of packet_buffer_ is nullptr";
         return;
@@ -124,7 +125,8 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
     struct IpPacketWrap* res_packet = reinterpret_cast<IpPacketWrap*>(malloc(sizeof(struct IpPacketWrap)));
     res_packet->ip_data = nullptr;
     res_packet->ts = pcap->ts;
-    res_packet->ip_data_len = 0;
+    res_packet->real_ip_data_len = pcap->caplen < PCAP_SNAPLEN ? pcap->caplen : PCAP_SNAPLEN;
+    res_packet->expected_ip_data_len = pcap->len;
     u_char* p_link = const_cast<u_char*>(p);
     // 解析链路层，DLT_EN10MB 为以太网协议
     if (dlt == DLT_EN10MB) {
@@ -145,11 +147,11 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
             ether_type = ntohs(ethernet->ether_type);
         }
         if (ether_type == ETHERTYPE_IP) {
-            res_packet->ip_data_len = pcap->len - DLT_EN10MB_HEADER_LEN - (vlan_frame ? VLAN_HEADER_LEN : 0);
-            res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char) * res_packet->ip_data_len));
+            res_packet->expected_ip_data_len = pcap->len - DLT_EN10MB_HEADER_LEN - (vlan_frame ? VLAN_HEADER_LEN : 0);
+            res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char) * res_packet->real_ip_data_len));
             memcpy(reinterpret_cast<void*>(res_packet->ip_data),
                 reinterpret_cast<void*>(p_link + DLT_EN10MB_HEADER_LEN + (vlan_frame ? VLAN_HEADER_LEN : 0)),
-                res_packet->ip_data_len);
+                res_packet->real_ip_data_len);
         } else {
             free(res_packet);
             LOG(ERROR) << "DLT_EN10MB just support ETHERTYPE_IP protocol, ether_type: " << ether_type;
@@ -161,10 +163,10 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
             LOG(ERROR) << "DLT_LINUX_SLL pcap len is invalid, len: " << pcap->len;
             return nullptr;
         }
-        res_packet->ip_data_len = pcap->len - DLT_LINUX_SLL_HEADER_LEN;
-        res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->ip_data_len));
+        res_packet->expected_ip_data_len = pcap->len - DLT_LINUX_SLL_HEADER_LEN;
+        res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->real_ip_data_len));
         memcpy(reinterpret_cast<void*>(res_packet->ip_data),
-            reinterpret_cast<void*>(p_link + DLT_LINUX_SLL_HEADER_LEN), res_packet->ip_data_len);
+            reinterpret_cast<void*>(p_link + DLT_LINUX_SLL_HEADER_LEN), res_packet->real_ip_data_len);
     } else if (dlt == DLT_RAW || dlt == DLT_NULL) {
         // DLT_RAW 是一种简单的数据链路类型，它表示数据包的头部没有任何特定的格式或协议结构。
         // 在 DLT_RAW 中，数据包头部直接包含了网络层及以上协议的数据。
@@ -176,9 +178,9 @@ IpPacketWrap* Sniffer::get_packet_data(const u_char* p, int dlt, const pcap_pkth
             LOG(ERROR) << "dlt: " << dlt << ", pcap len is invalid, len: " << pcap->len;
             return nullptr;
         }
-        res_packet->ip_data_len = pcap->len;
-        res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->ip_data_len));
-        memcpy(reinterpret_cast<void*>(res_packet->ip_data), reinterpret_cast<void*>(p_link), res_packet->ip_data_len);
+        res_packet->expected_ip_data_len = pcap->len;
+        res_packet->ip_data = reinterpret_cast<u_char*>(malloc(sizeof(u_char)*res_packet->real_ip_data_len));
+        memcpy(reinterpret_cast<void*>(res_packet->ip_data), reinterpret_cast<void*>(p_link), res_packet->real_ip_data_len);
     }
     return res_packet;
 }

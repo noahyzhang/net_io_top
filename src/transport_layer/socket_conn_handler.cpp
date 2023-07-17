@@ -34,7 +34,8 @@ int SocketConnHandler::process_packet(const IPv4Packet& ip_packet) {
             ip_packet.get_ip_body(), ip_packet.get_ip_body_len());
         return process_udp_packet(udp_packet);
     } else {
-        LOG(ERROR) << "just support TCP/UDP protocol";
+        LOG(ERROR) << "just support TCP/UDP protocol, cur protocol: "
+            << static_cast<int>(ip_packet.get_ip_protocol());
         return -1;
     }
     return 0;
@@ -107,26 +108,36 @@ int SocketConnHandler::process_udp_packet(const UdpPacket& udp_packet) {
     return 0;
 }
 
-std::vector<Connection*> SocketConnHandler::get_sorted_conns() {
-    std::vector<Connection*> sorted_conns;
+std::vector<ConnectionInfo> SocketConnHandler::get_sorted_conns() {
+    std::vector<ConnectionInfo> sorted_conns;
     // 在锁内，先移除过期的连接，然后放入数组容器中
     pthread_mutex_lock(&conn_hash_lock_);
     remove_overdue_conn();
     for (auto it = conn_hash_.begin(); it != conn_hash_.end(); ++it) {
         it->second->re_calc_period_value();
-        sorted_conns.emplace_back(it->second);
+        sorted_conns.emplace_back(ConnectionInfo{
+            .protocol = it->second->get_protocol(),
+            .src_addr = it->second->get_src_addr().ptr(),
+            .dst_addr = it->second->get_dst_addr().ptr(),
+            .src_port = it->second->get_src_port(),
+            .dst_port = it->second->get_dst_port(),
+            .forward_packet_count = it->second->get_forward_packet_count(),
+            .forward_packet_bytes = it->second->get_forward_packet_bytes(),
+            .backward_packet_count = it->second->get_backward_packet_count(),
+            .backward_packet_bytes = it->second->get_backward_packet_bytes(),
+        });
     }
     pthread_mutex_unlock(&conn_hash_lock_);
     // 排序
-    std::sort(sorted_conns.begin(), sorted_conns.end(),
-        [](Connection* c1, Connection* c2) ->bool {
-        if ((c1->get_backward_packet_bytes() + c1->get_forward_packet_bytes())
-            > (c2->get_backward_packet_bytes() + c2->get_forward_packet_bytes())) {
-            return false;
-        } else {
-            return true;
-        }
-    });
+    // std::sort(sorted_conns.begin(), sorted_conns.end(),
+    //     [](Connection* c1, Connection* c2) ->bool {
+    //     if ((c1->get_backward_packet_bytes() + c1->get_forward_packet_bytes())
+    //         > (c2->get_backward_packet_bytes() + c2->get_forward_packet_bytes())) {
+    //         return false;
+    //     } else {
+    //         return true;
+    //     }
+    // });
     return sorted_conns;
 }
 

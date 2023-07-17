@@ -27,20 +27,20 @@ int main() {
     for (;;) {
         auto sorted_conns = conn_handler->get_sorted_conns();
         for (const auto& conn : sorted_conns) {
-            std::string protocol = (conn->get_protocol() == TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_TCP)
+            std::string protocol = (conn.protocol == TransportLayerProtocol::TRANSPORT_LAYER_PROTOCOL_TCP)
                  ? "TCP" : "UDP";
-            if (conn->get_forward_packet_count() > 0) {
-                std::cout << protocol << " conn: " << conn->get_src_addr().ptr() << ":" << conn->get_src_port() << ", "
-                    << conn->get_dst_addr().ptr() << ":" << conn->get_dst_port()
-                    << ", packet count: " << conn->get_forward_packet_count()
-                    << ", packet bytes: " << conn->get_forward_packet_bytes()
+            if (conn.forward_packet_count > 0) {
+                std::cout << protocol << " conn: " << conn.src_addr << ":" << conn.src_port << ", "
+                    << conn.dst_addr << ":" << conn.dst_port
+                    << ", packet count: " << conn.forward_packet_count
+                    << ", packet bytes: " << conn.forward_packet_bytes
                     << std::endl;
             }
-            if (conn->get_backward_packet_count() > 0) {
-                std::cout << protocol << " conn: " << conn->get_dst_addr().ptr() << ":" << conn->get_dst_port() << ", "
-                    << conn->get_src_addr().ptr() << ":" << conn->get_src_port()
-                    << ", packet count: " << conn->get_backward_packet_count()
-                    << ", packet bytes: " << conn->get_backward_packet_bytes()
+            if (conn.backward_packet_count > 0) {
+                std::cout << protocol << " conn: " << conn.dst_addr << ":" << conn.dst_port << ", "
+                    << conn.src_addr << ":" << conn.src_port
+                    << ", packet count: " << conn.backward_packet_count
+                    << ", packet bytes: " << conn.backward_packet_bytes
                     << std::endl;
             }
         }

@@ -76,8 +76,8 @@ public:
             // 在这里直接加上链路层和网络层的头部大小，不优雅的实现，后续需要改进
             cur_period_forward_packet_bytes_ += udp_packet.get_udp_header().get_udp_packet_len()
                 + DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN;
-            LOG(DEBUG) << "accept forward udp packet, count: " << cur_period_forward_packet_count_
-                << ", bytes: " << cur_period_forward_packet_bytes_;
+            // LOG(DEBUG) << "accept forward udp packet, count: " << cur_period_forward_packet_count_
+            //     << ", bytes: " << cur_period_forward_packet_bytes_;
 
         } else if ((udp_packet.get_src_addr() == *dst_addr_ && udp_packet.get_src_port() == dst_port_)
             && (udp_packet.get_dst_addr() == *src_addr_ && udp_packet.get_dst_port() == src_port_)) {
@@ -85,8 +85,8 @@ public:
             // 在这里直接加上链路层和网络层的头部大小，不优雅的实现，后续需要改进
             cur_period_backward_packet_bytes_ += udp_packet.get_udp_header().get_udp_packet_len()
                 + DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN;
-            LOG(DEBUG) << "accept backward udp packet, count: " << cur_period_backward_packet_count_
-                << ", bytes: " << cur_period_backward_packet_bytes_;
+            // LOG(DEBUG) << "accept backward udp packet, count: " << cur_period_backward_packet_count_
+            //     << ", bytes: " << cur_period_backward_packet_bytes_;
         } else {
             LOG(ERROR) << "packet not belong to same ip or port";
             return -1;

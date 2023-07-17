@@ -84,11 +84,11 @@ public:
             // 在这里直接加上链路层和网络层的头部大小，不优雅的实现，后续需要改进
             cur_period_forward_packet_bytes_ += tcp_packet.get_tcp_header().get_tcp_packet_len()
                 + DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN;
-            LOG(DEBUG) << "accept forward tcp packet, src: " << src_addr_->ptr() << ":" << src_port_
-                << ", dst: " << dst_addr_->ptr() << ":" << dst_port_
-                << ", count: " << cur_period_forward_packet_count_
-                << ", bytes: " << tcp_packet.get_tcp_header().get_tcp_packet_len()
-                    + DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN;
+            // LOG(DEBUG) << "accept forward tcp packet, src: " << src_addr_->ptr() << ":" << src_port_
+            //     << ", dst: " << dst_addr_->ptr() << ":" << dst_port_
+            //     << ", count: " << cur_period_forward_packet_count_
+            //     << ", bytes: " << tcp_packet.get_tcp_header().get_tcp_packet_len()
+            //         + DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN;
 
         } else if ((tcp_packet.get_src_addr() == *dst_addr_ && tcp_packet.get_src_port() == dst_port_)
             && (tcp_packet.get_dst_addr() == *src_addr_ && tcp_packet.get_dst_port() == src_port_)) {
@@ -96,11 +96,11 @@ public:
             // 在这里直接加上链路层和网络层的头部大小，不优雅的实现，后续需要改进
             cur_period_backward_packet_bytes_ += tcp_packet.get_tcp_header().get_tcp_packet_len()
                 + DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN;
-            LOG(DEBUG) << "accept backward tcp packet, src: " << src_addr_->ptr() << ":" << src_port_
-                << ", dst: " << dst_addr_->ptr() << ":" << dst_port_
-                << ", count: " << cur_period_backward_packet_count_
-                << ", bytes: " << tcp_packet.get_tcp_header().get_tcp_packet_len()
-                    + DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN;
+            // LOG(DEBUG) << "accept backward tcp packet, src: " << src_addr_->ptr() << ":" << src_port_
+            //     << ", dst: " << dst_addr_->ptr() << ":" << dst_port_
+            //     << ", count: " << cur_period_backward_packet_count_
+            //     << ", bytes: " << tcp_packet.get_tcp_header().get_tcp_packet_len()
+            //         + DLT_EN10MB_HEADER_LEN + IP_HEADER_LEN;
         } else {
             LOG(ERROR) << "packet not belong to same ip or port";
             return -1;
