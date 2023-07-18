@@ -115,17 +115,17 @@ std::vector<ConnectionInfo> SocketConnHandler::get_sorted_conns() {
     remove_overdue_conn();
     for (auto it = conn_hash_.begin(); it != conn_hash_.end(); ++it) {
         it->second->re_calc_period_value();
-        sorted_conns.emplace_back(ConnectionInfo{
-            .protocol = it->second->get_protocol(),
-            .src_addr = it->second->get_src_addr().ptr(),
-            .dst_addr = it->second->get_dst_addr().ptr(),
-            .src_port = it->second->get_src_port(),
-            .dst_port = it->second->get_dst_port(),
-            .forward_packet_count = it->second->get_forward_packet_count(),
-            .forward_packet_bytes = it->second->get_forward_packet_bytes(),
-            .backward_packet_count = it->second->get_backward_packet_count(),
-            .backward_packet_bytes = it->second->get_backward_packet_bytes(),
-        });
+        ConnectionInfo info;
+        info.protocol = it->second->get_protocol();
+        info.src_addr = it->second->get_src_addr().ptr();
+        info.dst_addr = it->second->get_dst_addr().ptr();
+        info.src_port = it->second->get_src_port();
+        info.dst_port = it->second->get_dst_port();
+        info.forward_packet_count = it->second->get_forward_packet_count();
+        info.forward_packet_bytes = it->second->get_forward_packet_bytes();
+        info.backward_packet_count = it->second->get_backward_packet_count();
+        info.backward_packet_bytes = it->second->get_backward_packet_bytes();
+        sorted_conns.emplace_back(info);
     }
     pthread_mutex_unlock(&conn_hash_lock_);
     // 排序

@@ -53,15 +53,22 @@ enum TransportLayerProtocol {
 };
 
 /**
- * @brief 连接的信息
+ * @brief 五元组
  * 
  */
-struct ConnectionInfo {
+struct SocketAddrInfo {
     TransportLayerProtocol protocol;
     std::string src_addr;
     std::string dst_addr;
     uint16_t src_port;
     uint16_t dst_port;
+};
+
+/**
+ * @brief 连接的信息
+ * 
+ */
+struct ConnectionInfo : public SocketAddrInfo {
     uint64_t forward_packet_count;
     uint64_t forward_packet_bytes;
     uint64_t backward_packet_count;
